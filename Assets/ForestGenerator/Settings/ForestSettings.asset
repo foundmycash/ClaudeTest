@@ -1,0 +1,258 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 77a18e87085bd0849a4c7c8abf7f5a75, type: 3}
+  m_Name: ForestSettings
+  m_EditorClassIdentifier: Assembly-CSharp::HavocForest.ForestSettings
+  world:
+    playableSize: {x: 300, y: 300}
+    cornerRadius: 45
+    edgeWobble: 14
+    edgeWobbleScale: 80
+  terrain:
+    vertexSpacing: 1.5
+    chunkCells: 32
+    hillHeight: 9
+    hillScale: 130
+    ridges: 0.35
+    bumpHeight: 0.7
+    bumpScale: 9
+    layer: 0
+    castShadows: 0
+  trails:
+    mainWidth: 3.8
+    pathWidth: 3.2
+    loops: 0.5
+    deadEnds: 3
+    playerOnlyPaths: 0
+    playerOnlyShare: 0.35
+    playerOnlyWidth: 1.4
+    wander: 0.6
+    wanderScale: 26
+    straightRuns: 0.5
+    slopeAvoidance: 1.5
+    shoulder: 2.5
+    edgeRaggedness: 0.7
+    gravelShare: 0.72
+    separation: 16
+    routingCell: 2
+  clearings:
+    count: 7
+    radius: {x: 9, y: 15}
+    spacing: 55
+    irregularity: 0.3
+    flatten: 0.8
+    trailheadRadius: 8
+    landmarks: 6
+  zones:
+    zoneSize: 75
+    borderBlend: 16
+    borderWarp: 22
+    zones:
+    - name: Old Conifer Stand
+      enabled: 1
+      weight: 3
+      dreadPreference: 0
+      treeDensity: 1
+      undergrowthDensity: 0.6
+      tagWeights:
+      - tag: Conifer
+        multiplier: 1.6
+      - tag: Deciduous
+        multiplier: 0.3
+      - tag: Birch
+        multiplier: 0.35
+      - tag: DeadTree
+        multiplier: 0.4
+      ground:
+        dirt: 0.2
+        gravel: 0
+        moss: 0.35
+        rock: 0
+        grass: 0.05
+        leafLitter: 0.1
+        roots: 0.12
+        needles: 0.6
+      debugColor: {r: 0.2, g: 0.45, b: 0.25, a: 1}
+    - name: Autumn Mixed Wood
+      enabled: 1
+      weight: 2
+      dreadPreference: -0.6
+      treeDensity: 0.85
+      undergrowthDensity: 1.3
+      tagWeights:
+      - tag: Conifer
+        multiplier: 0.7
+      - tag: Deciduous
+        multiplier: 1.7
+      - tag: Birch
+        multiplier: 0.8
+      - tag: DeadTree
+        multiplier: 0.2
+      ground:
+        dirt: 0.2
+        gravel: 0
+        moss: 0.15
+        rock: 0
+        grass: 0.15
+        leafLitter: 0.75
+        roots: 0.05
+        needles: 0.1
+      debugColor: {r: 0.85, g: 0.45, b: 0.15, a: 1}
+    - name: Birch Grove
+      enabled: 1
+      weight: 1
+      dreadPreference: -0.3
+      treeDensity: 0.8
+      undergrowthDensity: 0.9
+      tagWeights:
+      - tag: Birch
+        multiplier: 2.6
+      - tag: Deciduous
+        multiplier: 0.6
+      - tag: Conifer
+        multiplier: 0.35
+      ground:
+        dirt: 0.1
+        gravel: 0
+        moss: 0.2
+        rock: 0
+        grass: 0.5
+        leafLitter: 0.35
+        roots: 0.02
+        needles: 0.05
+      debugColor: {r: 0.9, g: 0.9, b: 0.8, a: 1}
+    - name: Thicket
+      enabled: 1
+      weight: 1
+      dreadPreference: 0.3
+      treeDensity: 1.5
+      undergrowthDensity: 2.2
+      tagWeights:
+      - tag: YoungConifer
+        multiplier: 2.6
+      - tag: Conifer
+        multiplier: 1
+      - tag: Bush
+        multiplier: 2
+      ground:
+        dirt: 0.2
+        gravel: 0
+        moss: 0.3
+        rock: 0
+        grass: 0.05
+        leafLitter: 0.1
+        roots: 0.1
+        needles: 0.55
+      debugColor: {r: 0.1, g: 0.25, b: 0.12, a: 1}
+    - name: Dead Stand
+      enabled: 1
+      weight: 1
+      dreadPreference: 1
+      treeDensity: 0.75
+      undergrowthDensity: 0.5
+      tagWeights:
+      - tag: DeadTree
+        multiplier: 3.5
+      - tag: Conifer
+        multiplier: 0.6
+      - tag: Deciduous
+        multiplier: 0.15
+      - tag: Birch
+        multiplier: 0.2
+      - tag: FallenLog
+        multiplier: 2.5
+      ground:
+        dirt: 0.45
+        gravel: 0
+        moss: 0.1
+        rock: 0.12
+        grass: 0.02
+        leafLitter: 0.05
+        roots: 0.35
+        needles: 0.25
+      debugColor: {r: 0.35, g: 0.3, b: 0.3, a: 1}
+    - name: Rocky Outcrop
+      enabled: 1
+      weight: 1
+      dreadPreference: 0.2
+      treeDensity: 0.55
+      undergrowthDensity: 0.6
+      tagWeights:
+      - tag: Boulder
+        multiplier: 3
+      - tag: Rock
+        multiplier: 2
+      - tag: Conifer
+        multiplier: 1.2
+      ground:
+        dirt: 0.15
+        gravel: 0.05
+        moss: 0.4
+        rock: 0.45
+        grass: 0.05
+        leafLitter: 0.05
+        roots: 0.05
+        needles: 0.25
+      debugColor: {r: 0.55, g: 0.55, b: 0.6, a: 1}
+  ground:
+    blendMapResolution: 1024
+    lightMapResolution: 1024
+    patchSize: 7
+    patchContrast: 0.7
+    rockSlopeStart: 30
+    rockSlopeEnd: 48
+    clearingGrass: 0.6
+    leavesOnTrails: 0.5
+    terrainOcclusion: 0.5
+  boundary:
+    bandWidth: 45
+    riseHeight: {x: 14, y: 26}
+    variationScale: 110
+    edgeTypeWeights: {x: 1, y: 1, z: 1}
+    edgeTypeSharpness: 0.6
+    footRise: 1.5
+    buildContainment: 1
+    wallInset: 9
+    wallThickness: 4
+    ceilingClearance: 10
+  monster:
+    playerHeight: 1.6
+    height: 4.8
+    width: 2
+    turningRadius: 3.5
+    stepHeight: 0.6
+    maxSlope: 35
+    sideMargin: 0.6
+    overheadMargin: 0.5
+  scatter:
+    globalDensity: 1
+    groundCoverDensity: 1
+    spacingScale: 1
+    bendThickets: 0.7
+    monsterGaps: 14
+    canopyOverhang: 0.45
+  streetlights:
+    perHundredMetres: 0.55
+    offTrailShare: 0.3
+    spacing: 38
+    greenShare: 0.3
+    brokenShare: 0.2
+    flickerShare: 0.25
+    decayWithDread: 0.4
+    warmColor: {r: 1, g: 0.82, b: 0.6, a: 1}
+    greenColor: {r: 0.55, g: 1, b: 0.55, a: 1}
+    range: 11
+    intensity: 1.6
+  atmosphere:
+    calm: {fileID: 11400000, guid: a8d7ad8becfb6b14c9817930b2eeed6c, type: 2}
+    dread: {fileID: 11400000, guid: b108852fd97b0c844ac55e1bc2a4a6b2, type: 2}
+    offTrailDread: 0.25

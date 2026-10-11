@@ -161,9 +161,8 @@ namespace QuestOptimization.Editor
             new Step
             {
                 name = "URP (Android quality level): switch off unused features",
-                why = "Light layers, light cookies, LOD cross fade and lens flares are unused by the scenes, but each one adds shader work or variants.",
+                why = "Light layers, LOD cross fade and lens flares are unused by the scenes, but each one adds shader work or variants. (Light cookies stay on: the forest flashlight uses one.)",
                 isDone = () => AndroidUrpAssets().All(a => UrpFlag(a, "m_SupportsLightLayers") == false
-                                                           && UrpFlag(a, "m_SupportsLightCookies") == false
                                                            && UrpFlag(a, "m_EnableLODCrossFade") == false
                                                            && UrpFlag(a, "m_SupportDataDrivenLensFlare") == false
                                                            && UrpFlag(a, "m_SupportScreenSpaceLensFlare") == false),
@@ -173,7 +172,7 @@ namespace QuestOptimization.Editor
                     {
                         foreach (string property in new[]
                                  {
-                                     "m_SupportsLightLayers", "m_SupportsLightCookies", "m_EnableLODCrossFade",
+                                     "m_SupportsLightLayers", "m_EnableLODCrossFade",
                                      "m_SupportDataDrivenLensFlare", "m_SupportScreenSpaceLensFlare"
                                  })
                             SetSerialized(asset, property, false);

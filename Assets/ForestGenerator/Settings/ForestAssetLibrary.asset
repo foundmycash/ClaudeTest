@@ -1,0 +1,814 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cce02eebae67b2842817fe4ee190a119, type: 3}
+  m_Name: ForestAssetLibrary
+  m_EditorClassIdentifier: Assembly-CSharp::HavocForest.ForestAssetLibrary
+  categories:
+  - name: Conifers
+    enabled: 1
+    tag: Conifer
+    kind: 0
+    placement: 0
+    variants:
+    - prefab: {fileID: 7907232939419629097, guid: 2fa6c963af2c09d4e8cf1c792724278a, type: 3}
+      weight: 1
+      scale: {x: 0.8, y: 1.15}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    - prefab: {fileID: 5570882386094366328, guid: b6b5920e9be89cd4d861d8ca6ca13f9b, type: 3}
+      weight: 1
+      scale: {x: 0.8, y: 1.15}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    - prefab: {fileID: 2364610228109845202, guid: 602247229febb014495922aec7b9e4fa, type: 3}
+      weight: 1
+      scale: {x: 0.8, y: 1.15}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    density: 2.6
+    spacing: 2.7
+    clustering: 0.35
+    clusterSize: 22
+    boundaryDensity: 1.3
+    maxCount: 0
+    slope: {x: 0, y: 45}
+    trailDistance: 0.2
+    maxTrailDistance: 0
+    inClearings: 0
+    followGround: 0
+    groundSurface: 4
+    groundInfluence: 0.8
+    alignToSlope: 0
+    randomTilt: 2
+    randomYaw: 1
+    sink: 0.15
+    blocksMonster: 1
+    colliders: 1
+    render: 0
+    drawDistance: 0
+    castShadows: 0
+    lodScale: 1
+    canopyShade: 0.85
+    groundMark: 2
+  - name: Young Conifers
+    enabled: 1
+    tag: YoungConifer
+    kind: 0
+    placement: 0
+    variants:
+    - prefab: {fileID: 4060613552990964558, guid: e9660a8a7b70ec146b4e245891ba0c12, type: 3}
+      weight: 1
+      scale: {x: 0.7, y: 1.3}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    - prefab: {fileID: 5989071804100716126, guid: d43c776bb3b42cc468e6adbf1144685f, type: 3}
+      weight: 1
+      scale: {x: 0.7, y: 1.3}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    density: 0.9
+    spacing: 1.8
+    clustering: 0.7
+    clusterSize: 12
+    boundaryDensity: 2
+    maxCount: 0
+    slope: {x: 0, y: 45}
+    trailDistance: 1
+    maxTrailDistance: 0
+    inClearings: 0
+    followGround: 0
+    groundSurface: 4
+    groundInfluence: 0.8
+    alignToSlope: 0
+    randomTilt: 4
+    randomYaw: 1
+    sink: 0.1
+    blocksMonster: 0
+    colliders: 1
+    render: 0
+    drawDistance: 0
+    castShadows: 0
+    lodScale: 1
+    canopyShade: 0.3
+    groundMark: 2
+  - name: Autumn Trees
+    enabled: 1
+    tag: Deciduous
+    kind: 0
+    placement: 0
+    variants:
+    - prefab: {fileID: 1850924084604566527, guid: 7993f01b8f7ca3a4592b4e967d1eb229, type: 3}
+      weight: 1
+      scale: {x: 0.8, y: 1.2}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    - prefab: {fileID: 3870485982248731701, guid: 146a1f3809edd5747aba32036bda2fa2, type: 3}
+      weight: 1
+      scale: {x: 0.8, y: 1.2}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    - prefab: {fileID: 9217026768648513583, guid: 23274b50ff34db44999bf7764ca3c0a8, type: 3}
+      weight: 1
+      scale: {x: 0.8, y: 1.2}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    density: 0.6
+    spacing: 4
+    clustering: 0.5
+    clusterSize: 18
+    boundaryDensity: 0.8
+    maxCount: 0
+    slope: {x: 0, y: 35}
+    trailDistance: 0.6
+    maxTrailDistance: 0
+    inClearings: 0
+    followGround: 0
+    groundSurface: 4
+    groundInfluence: 0.8
+    alignToSlope: 0
+    randomTilt: 3
+    randomYaw: 1
+    sink: 0.1
+    blocksMonster: 1
+    colliders: 1
+    render: 0
+    drawDistance: 0
+    castShadows: 0
+    lodScale: 1
+    canopyShade: 0.7
+    groundMark: 3
+  - name: Birches
+    enabled: 1
+    tag: Birch
+    kind: 0
+    placement: 0
+    variants:
+    - prefab: {fileID: 252287086888760508, guid: 8ee4fa12cdf709f47a14443b38b85452, type: 3}
+      weight: 1
+      scale: {x: 0.8, y: 1.15}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    - prefab: {fileID: 7688993203339157938, guid: e386666e53f8f7346a8eee7db2c702ee, type: 3}
+      weight: 1
+      scale: {x: 0.8, y: 1.15}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    density: 0.45
+    spacing: 2.6
+    clustering: 0.7
+    clusterSize: 16
+    boundaryDensity: 0.5
+    maxCount: 0
+    slope: {x: 0, y: 35}
+    trailDistance: 0.4
+    maxTrailDistance: 0
+    inClearings: 0
+    followGround: 0
+    groundSurface: 4
+    groundInfluence: 0.8
+    alignToSlope: 0
+    randomTilt: 5
+    randomYaw: 1
+    sink: 0.1
+    blocksMonster: 1
+    colliders: 1
+    render: 0
+    drawDistance: 0
+    castShadows: 0
+    lodScale: 1
+    canopyShade: 0.4
+    groundMark: 3
+  - name: Dead Trees
+    enabled: 1
+    tag: DeadTree
+    kind: 0
+    placement: 0
+    variants:
+    - prefab: {fileID: 432386246209518110, guid: 9dfad99237444234e9460fd31b3103db, type: 3}
+      weight: 1
+      scale: {x: 0.85, y: 1.2}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    - prefab: {fileID: 3199065555048248886, guid: 8899e8bd93791b9438307c9621d3da0b, type: 3}
+      weight: 1
+      scale: {x: 0.85, y: 1.2}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    density: 0.12
+    spacing: 6
+    clustering: 0.3
+    clusterSize: 25
+    boundaryDensity: 0.6
+    maxCount: 0
+    slope: {x: 0, y: 40}
+    trailDistance: 0.5
+    maxTrailDistance: 0
+    inClearings: 0
+    followGround: 0
+    groundSurface: 4
+    groundInfluence: 0.8
+    alignToSlope: 0
+    randomTilt: 7
+    randomYaw: 1
+    sink: 0.15
+    blocksMonster: 1
+    colliders: 1
+    render: 0
+    drawDistance: 0
+    castShadows: 0
+    lodScale: 1
+    canopyShade: 0.12
+    groundMark: 1
+  - name: Bushes
+    enabled: 1
+    tag: Bush
+    kind: 1
+    placement: 0
+    variants:
+    - prefab: {fileID: 4408573390447804520, guid: 1984c70801f39a34aa1cc8946ced8ff9, type: 3}
+      weight: 1
+      scale: {x: 0.7, y: 1.4}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    - prefab: {fileID: 3867740840598251776, guid: 45cb19e3eaeb14e4fbe4b5e018f76caf, type: 3}
+      weight: 1
+      scale: {x: 0.7, y: 1.4}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    density: 2.8
+    spacing: 1.5
+    clustering: 0.6
+    clusterSize: 10
+    boundaryDensity: 1.5
+    maxCount: 0
+    slope: {x: 0, y: 40}
+    trailDistance: 0.3
+    maxTrailDistance: 0
+    inClearings: 0
+    followGround: 0
+    groundSurface: 4
+    groundInfluence: 0.8
+    alignToSlope: 0
+    randomTilt: 0
+    randomYaw: 1
+    sink: 0.05
+    blocksMonster: 0
+    colliders: 0
+    render: 0
+    drawDistance: 55
+    castShadows: 0
+    lodScale: 1
+    canopyShade: 0.15
+    groundMark: 0
+  - name: Ferns
+    enabled: 1
+    tag: Fern
+    kind: 1
+    placement: 0
+    variants:
+    - prefab: {fileID: 4372021335583341175, guid: 583fe04518f8d014f95aaaf456fe6891, type: 3}
+      weight: 1
+      scale: {x: 0.7, y: 1.3}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    density: 4
+    spacing: 0.9
+    clustering: 0.65
+    clusterSize: 8
+    boundaryDensity: 0
+    maxCount: 0
+    slope: {x: 0, y: 35}
+    trailDistance: 0.1
+    maxTrailDistance: 0
+    inClearings: 0
+    followGround: 1
+    groundSurface: 2
+    groundInfluence: 0.5
+    alignToSlope: 0
+    randomTilt: 0
+    randomYaw: 1
+    sink: 0.05
+    blocksMonster: 0
+    colliders: 0
+    render: 0
+    drawDistance: 38
+    castShadows: 0
+    lodScale: 1
+    canopyShade: 0
+    groundMark: 0
+  - name: Bend Thickets
+    enabled: 1
+    tag: Bush
+    kind: 1
+    placement: 4
+    variants:
+    - prefab: {fileID: 4408573390447804520, guid: 1984c70801f39a34aa1cc8946ced8ff9, type: 3}
+      weight: 1
+      scale: {x: 0.9, y: 1.4}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    - prefab: {fileID: 3867740840598251776, guid: 45cb19e3eaeb14e4fbe4b5e018f76caf, type: 3}
+      weight: 1
+      scale: {x: 0.9, y: 1.4}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    - prefab: {fileID: 4060613552990964558, guid: e9660a8a7b70ec146b4e245891ba0c12, type: 3}
+      weight: 1
+      scale: {x: 0.9, y: 1.4}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    - prefab: {fileID: 5989071804100716126, guid: d43c776bb3b42cc468e6adbf1144685f, type: 3}
+      weight: 1
+      scale: {x: 0.9, y: 1.4}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    density: 10
+    spacing: 1.5
+    clustering: 0.4
+    clusterSize: 14
+    boundaryDensity: 0
+    maxCount: 0
+    slope: {x: 0, y: 45}
+    trailDistance: 0.6
+    maxTrailDistance: 0
+    inClearings: 0
+    followGround: 0
+    groundSurface: 4
+    groundInfluence: 0.8
+    alignToSlope: 0
+    randomTilt: 0
+    randomYaw: 1
+    sink: 0.05
+    blocksMonster: 0
+    colliders: 0
+    render: 0
+    drawDistance: 60
+    castShadows: 0
+    lodScale: 1
+    canopyShade: 0.2
+    groundMark: 0
+  - name: Grass Tufts
+    enabled: 1
+    tag: Grass
+    kind: 2
+    placement: 0
+    variants:
+    - prefab: {fileID: 9781873325440503, guid: 13808ceed9d050f48bc24518670b4082, type: 3}
+      weight: 1
+      scale: {x: 0.7, y: 1.4}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    - prefab: {fileID: 758924942142463687, guid: 2ecbded829000fc4f9afe0488bcad890, type: 3}
+      weight: 1
+      scale: {x: 0.7, y: 1.4}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    density: 18
+    spacing: 0.42
+    clustering: 0.5
+    clusterSize: 5
+    boundaryDensity: 0
+    maxCount: 0
+    slope: {x: 0, y: 35}
+    trailDistance: -0.3
+    maxTrailDistance: 0
+    inClearings: 1
+    followGround: 1
+    groundSurface: 4
+    groundInfluence: 0.9
+    alignToSlope: 0.6
+    randomTilt: 0
+    randomYaw: 1
+    sink: 0.05
+    blocksMonster: 0
+    colliders: 0
+    render: 0
+    drawDistance: 26
+    castShadows: 0
+    lodScale: 1
+    canopyShade: 0
+    groundMark: 0
+  - name: Fallen Branches
+    enabled: 1
+    tag: Branch
+    kind: 2
+    placement: 0
+    variants:
+    - prefab: {fileID: 4179813781683481268, guid: ec90d1154369c8a4cb4e333054a60b8d, type: 3}
+      weight: 1
+      scale: {x: 0.7, y: 1.3}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    - prefab: {fileID: 4374625765493735194, guid: 4bda34293a5eb584b87963686183a6a9, type: 3}
+      weight: 1
+      scale: {x: 0.7, y: 1.3}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    density: 2
+    spacing: 1.1
+    clustering: 0.4
+    clusterSize: 14
+    boundaryDensity: 0
+    maxCount: 0
+    slope: {x: 0, y: 40}
+    trailDistance: 0.1
+    maxTrailDistance: 0
+    inClearings: 1
+    followGround: 0
+    groundSurface: 4
+    groundInfluence: 0.8
+    alignToSlope: 1
+    randomTilt: 0
+    randomYaw: 1
+    sink: 0.05
+    blocksMonster: 0
+    colliders: 0
+    render: 0
+    drawDistance: 30
+    castShadows: 0
+    lodScale: 1
+    canopyShade: 0
+    groundMark: 0
+  - name: Pebbles
+    enabled: 1
+    tag: Rock
+    kind: 2
+    placement: 0
+    variants:
+    - prefab: {fileID: 1761825405005030994, guid: 19423936c9c311e4695a88bef0542073, type: 3}
+      weight: 1
+      scale: {x: 0.7, y: 1.4}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    density: 1.5
+    spacing: 1
+    clustering: 0.5
+    clusterSize: 14
+    boundaryDensity: 0
+    maxCount: 0
+    slope: {x: 0, y: 50}
+    trailDistance: -0.6
+    maxTrailDistance: 0
+    inClearings: 1
+    followGround: 0
+    groundSurface: 4
+    groundInfluence: 0.8
+    alignToSlope: 1
+    randomTilt: 0
+    randomYaw: 1
+    sink: 0.05
+    blocksMonster: 0
+    colliders: 0
+    render: 0
+    drawDistance: 24
+    castShadows: 0
+    lodScale: 1
+    canopyShade: 0
+    groundMark: 0
+  - name: Exposed Roots
+    enabled: 1
+    tag: Roots
+    kind: 2
+    placement: 0
+    variants:
+    - prefab: {fileID: 4146386835521476831, guid: 8c56fd2d558f50b4f8cedbe67e9d993b, type: 3}
+      weight: 1
+      scale: {x: 0.8, y: 1.3}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    density: 0.8
+    spacing: 2
+    clustering: 0.4
+    clusterSize: 14
+    boundaryDensity: 0
+    maxCount: 0
+    slope: {x: 0, y: 40}
+    trailDistance: -0.4
+    maxTrailDistance: 0
+    inClearings: 0
+    followGround: 1
+    groundSurface: 6
+    groundInfluence: 1
+    alignToSlope: 1
+    randomTilt: 0
+    randomYaw: 1
+    sink: 0.05
+    blocksMonster: 0
+    colliders: 0
+    render: 0
+    drawDistance: 32
+    castShadows: 0
+    lodScale: 1
+    canopyShade: 0
+    groundMark: 0
+  - name: Rocks
+    enabled: 1
+    tag: Rock
+    kind: 3
+    placement: 0
+    variants:
+    - prefab: {fileID: 152525657737317348, guid: 635d0f692f14bdc4b9b7dcf00396ee51, type: 3}
+      weight: 1
+      scale: {x: 0.7, y: 1.4}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    - prefab: {fileID: 1246392328907877213, guid: 7e0fc38dc8efc57469f25001aae5dbb9, type: 3}
+      weight: 1
+      scale: {x: 0.7, y: 1.4}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    - prefab: {fileID: 1983850736212720285, guid: ba774b0cdb574f942be7e42b7118a9eb, type: 3}
+      weight: 1
+      scale: {x: 0.7, y: 1.4}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    density: 0.35
+    spacing: 2.5
+    clustering: 0.55
+    clusterSize: 14
+    boundaryDensity: 2
+    maxCount: 0
+    slope: {x: 0, y: 50}
+    trailDistance: 0.3
+    maxTrailDistance: 0
+    inClearings: 0
+    followGround: 0
+    groundSurface: 4
+    groundInfluence: 0.8
+    alignToSlope: 0.6
+    randomTilt: 0
+    randomYaw: 1
+    sink: 0.05
+    blocksMonster: 1
+    colliders: 1
+    render: 0
+    drawDistance: 60
+    castShadows: 0
+    lodScale: 1
+    canopyShade: 0
+    groundMark: 4
+  - name: Boulders
+    enabled: 1
+    tag: Boulder
+    kind: 3
+    placement: 0
+    variants:
+    - prefab: {fileID: 1442246649858764605, guid: 1c187b1b655582b41b1e42b723ed1014, type: 3}
+      weight: 1
+      scale: {x: 0.8, y: 1.5}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    - prefab: {fileID: 5083331535148648448, guid: 1c2b0f329649fb046895a83c8ed15c4e, type: 3}
+      weight: 1
+      scale: {x: 0.8, y: 1.5}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    density: 0.05
+    spacing: 12
+    clustering: 0.4
+    clusterSize: 14
+    boundaryDensity: 3
+    maxCount: 0
+    slope: {x: 0, y: 50}
+    trailDistance: 0.8
+    maxTrailDistance: 0
+    inClearings: 0
+    followGround: 0
+    groundSurface: 4
+    groundInfluence: 0.8
+    alignToSlope: 0.4
+    randomTilt: 0
+    randomYaw: 1
+    sink: 0.1
+    blocksMonster: 1
+    colliders: 1
+    render: 0
+    drawDistance: 0
+    castShadows: 0
+    lodScale: 1
+    canopyShade: 0
+    groundMark: 4
+  - name: Fallen Logs
+    enabled: 1
+    tag: FallenLog
+    kind: 3
+    placement: 0
+    variants:
+    - prefab: {fileID: 5496291787568975161, guid: f539617660aaaae4ca7adc6cd759be1c, type: 3}
+      weight: 1
+      scale: {x: 0.8, y: 1.2}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    - prefab: {fileID: 6504243691958227382, guid: d948b681f2b244345b1a4c546684ebc1, type: 3}
+      weight: 1
+      scale: {x: 0.8, y: 1.2}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    density: 0.08
+    spacing: 8
+    clustering: 0.3
+    clusterSize: 14
+    boundaryDensity: 1.5
+    maxCount: 0
+    slope: {x: 0, y: 30}
+    trailDistance: 0.8
+    maxTrailDistance: 0
+    inClearings: 0
+    followGround: 0
+    groundSurface: 4
+    groundInfluence: 0.8
+    alignToSlope: 1
+    randomTilt: 0
+    randomYaw: 1
+    sink: 0.08
+    blocksMonster: 1
+    colliders: 1
+    render: 0
+    drawDistance: 0
+    castShadows: 0
+    lodScale: 1
+    canopyShade: 0
+    groundMark: 4
+  - name: Stumps
+    enabled: 1
+    tag: Stump
+    kind: 3
+    placement: 0
+    variants:
+    - prefab: {fileID: 8561755265938284464, guid: 6c35256c85759b84da6372c0464cc223, type: 3}
+      weight: 1
+      scale: {x: 0.8, y: 1.3}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    density: 0.12
+    spacing: 5
+    clustering: 0.4
+    clusterSize: 14
+    boundaryDensity: 0
+    maxCount: 0
+    slope: {x: 0, y: 35}
+    trailDistance: 0.3
+    maxTrailDistance: 0
+    inClearings: 0
+    followGround: 0
+    groundSurface: 4
+    groundInfluence: 0.8
+    alignToSlope: 0
+    randomTilt: 0
+    randomYaw: 1
+    sink: 0.05
+    blocksMonster: 0
+    colliders: 1
+    render: 0
+    drawDistance: 50
+    castShadows: 0
+    lodScale: 1
+    canopyShade: 0
+    groundMark: 1
+  - name: Boundary Rocks
+    enabled: 1
+    tag: CliffRock
+    kind: 4
+    placement: 3
+    variants:
+    - prefab: {fileID: 3651448241188828437, guid: ad45f3a90c0a31144896e2323dc66d06, type: 3}
+      weight: 1
+      scale: {x: 0.8, y: 1.3}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    - prefab: {fileID: 3208857910554938283, guid: e7af40203e5185146b6d0b5d2d2104e6, type: 3}
+      weight: 1
+      scale: {x: 0.8, y: 1.3}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    - prefab: {fileID: 2664743999526366081, guid: b2538c5243bec3c48b6e18dfcd6543b4, type: 3}
+      weight: 1
+      scale: {x: 0.8, y: 1.3}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    density: 1
+    spacing: 2.2
+    clustering: 0.4
+    clusterSize: 14
+    boundaryDensity: 0
+    maxCount: 0
+    slope: {x: 0, y: 35}
+    trailDistance: 1
+    maxTrailDistance: 0
+    inClearings: 0
+    followGround: 0
+    groundSurface: 4
+    groundInfluence: 0.8
+    alignToSlope: 0.5
+    randomTilt: 0
+    randomYaw: 1
+    sink: 0.6
+    blocksMonster: 1
+    colliders: 1
+    render: 0
+    drawDistance: 0
+    castShadows: 0
+    lodScale: 1
+    canopyShade: 0
+    groundMark: 4
+  - name: Streetlights
+    enabled: 1
+    tag: Streetlight
+    kind: 4
+    placement: 2
+    variants:
+    - prefab: {fileID: 5043843043518274755, guid: 603face4d58f3d645a60cbc37e8572e1, type: 3}
+      weight: 1
+      scale: {x: 0.95, y: 1.05}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    - prefab: {fileID: 3061291686139591297, guid: 41d30756b27a3d94f9f03f4a745d61da, type: 3}
+      weight: 1
+      scale: {x: 0.95, y: 1.05}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    density: 1
+    spacing: 2
+    clustering: 0.4
+    clusterSize: 14
+    boundaryDensity: 0
+    maxCount: 0
+    slope: {x: 0, y: 35}
+    trailDistance: 1
+    maxTrailDistance: 0
+    inClearings: 0
+    followGround: 0
+    groundSurface: 4
+    groundInfluence: 0.8
+    alignToSlope: 0
+    randomTilt: 0
+    randomYaw: 1
+    sink: 0.2
+    blocksMonster: 0
+    colliders: 1
+    render: 0
+    drawDistance: 0
+    castShadows: 0
+    lodScale: 1
+    canopyShade: 0
+    groundMark: 5
+  - name: Landmarks
+    enabled: 1
+    tag: Landmark
+    kind: 4
+    placement: 1
+    variants:
+    - prefab: {fileID: 236846598100258330, guid: f3431ef16b3717b45b651cf18620a0f2, type: 3}
+      weight: 1
+      scale: {x: 0.95, y: 1.05}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    - prefab: {fileID: 3027020957904248709, guid: 41e12a8d4082e1642a78093f9a9bf8b0, type: 3}
+      weight: 1
+      scale: {x: 0.95, y: 1.05}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    - prefab: {fileID: 2162989877171658282, guid: 21a2f87e33f8083408efc39bc34d7a7e, type: 3}
+      weight: 1
+      scale: {x: 0.95, y: 1.05}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    - prefab: {fileID: 6856043781304480, guid: b1139af78fe1fd442b85e3c8c287d43f, type: 3}
+      weight: 1
+      scale: {x: 0.95, y: 1.05}
+      heightStretch: {x: 1, y: 1}
+      footprint: 0
+    density: 1
+    spacing: 2
+    clustering: 0.4
+    clusterSize: 14
+    boundaryDensity: 0
+    maxCount: 0
+    slope: {x: 0, y: 35}
+    trailDistance: 1
+    maxTrailDistance: 0
+    inClearings: 0
+    followGround: 0
+    groundSurface: 4
+    groundInfluence: 0.8
+    alignToSlope: 0
+    randomTilt: 0
+    randomYaw: 1
+    sink: 0.1
+    blocksMonster: 1
+    colliders: 1
+    render: 0
+    drawDistance: 0
+    castShadows: 0
+    lodScale: 1
+    canopyShade: 0.2
+    groundMark: 1

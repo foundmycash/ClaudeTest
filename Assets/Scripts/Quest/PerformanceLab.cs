@@ -32,6 +32,9 @@ namespace QuestOptimization
 
         public static PerformanceLab Instance { get; private set; }
 
+        /// <summary>Other systems can add their own lines under the frame times (the forest adds its draw calls and triangles).</summary>
+        public static event Action<StringBuilder> ExtraStats;
+
         public static void Create()
         {
             if (Instance != null)
@@ -438,6 +441,7 @@ namespace QuestOptimization
             text.Append("CPU ").Append(cpuMs > 0 ? cpuMs.ToString("0.0") + " ms" : "n/a")
                 .Append("   GPU ").Append(gpuMs > 0 ? gpuMs.ToString("0.0") + " ms" : "n/a")
                 .Append("   garbage ").Append(gcKbPerSecond.ToString("0")).Append(" KB/s\n");
+            if (ExtraStats != null) ExtraStats(text);
             text.Append('\n');
             for (int i = 0; i < rows.Count; i++)
             {

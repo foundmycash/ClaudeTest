@@ -1,0 +1,83 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d20040e853dc9c4458f8322051608847, type: 3}
+  m_Name: ForestGroundLayers
+  m_EditorClassIdentifier: Assembly-CSharp::HavocForest.ForestGroundLayers
+  layers:
+  - name: Dirt
+    albedo: {fileID: 2800000, guid: f78d4081019c2b94c991aa1a859e30e8, type: 3}
+    normal: {fileID: 2800000, guid: 28ef5aed4143c8744a29340e47f416ef, type: 3}
+    height: {fileID: 0}
+    tileSize: 3
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    smoothness: 0.08
+    normalStrength: 1
+  - name: Gravel
+    albedo: {fileID: 2800000, guid: 83f97f4d9db22264bbc768b78a9b31b4, type: 3}
+    normal: {fileID: 2800000, guid: a82a44d69a99d234bbdb5a7488ec4dac, type: 3}
+    height: {fileID: 0}
+    tileSize: 2.2
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    smoothness: 0.15
+    normalStrength: 1
+  - name: Moss
+    albedo: {fileID: 2800000, guid: 6461bb5290bf2f74b9b3ede2ba54c4ce, type: 3}
+    normal: {fileID: 2800000, guid: 01b43c6e063922441ac963aefaf1a44f, type: 3}
+    height: {fileID: 0}
+    tileSize: 2.6
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    smoothness: 0.05
+    normalStrength: 1
+  - name: Rock
+    albedo: {fileID: 2800000, guid: 51bf414763416f343b6e4fd7c1957535, type: 3}
+    normal: {fileID: 2800000, guid: 72a99ab119bd95a45a566a5f76522050, type: 3}
+    height: {fileID: 0}
+    tileSize: 4.5
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    smoothness: 0.2
+    normalStrength: 1
+  - name: Grass
+    albedo: {fileID: 2800000, guid: 3f34e99f82b634640944f2c3a8e56bc4, type: 3}
+    normal: {fileID: 2800000, guid: eeb54f5dd12d7794484c87eda679dd93, type: 3}
+    height: {fileID: 0}
+    tileSize: 2.2
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    smoothness: 0.05
+    normalStrength: 1
+  - name: Leaf Litter
+    albedo: {fileID: 2800000, guid: fcc37a0403e3976488ccaf1f32ee7086, type: 3}
+    normal: {fileID: 2800000, guid: 30f3213a8cb1e9e4f9a45d6cf3abf93c, type: 3}
+    height: {fileID: 0}
+    tileSize: 2.4
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    smoothness: 0.1
+    normalStrength: 1
+  - name: Roots
+    albedo: {fileID: 2800000, guid: 2606e6bb38c17ed448072c5af962e1bc, type: 3}
+    normal: {fileID: 2800000, guid: 2fab40565f8ab0245b36ce51ae3d78f8, type: 3}
+    height: {fileID: 0}
+    tileSize: 3.2
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    smoothness: 0.1
+    normalStrength: 1
+  - name: Needles
+    albedo: {fileID: 2800000, guid: b5242f80da7cf1147a58673216279162, type: 3}
+    normal: {fileID: 2800000, guid: f929bd55498a3bf47ada68492bb4b19d, type: 3}
+    height: {fileID: 0}
+    tileSize: 2.4
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    smoothness: 0.06
+    normalStrength: 1
+  textureSize: 512
+  albedoArray: {fileID: 18700000, guid: 72b2d5b9d8528a449bd80a7f08c65066, type: 3}
+  normalArray: {fileID: 18700000, guid: ef7f61525459d4a46a44df71904a9cb8, type: 3}
+  material: {fileID: 2100000, guid: 4628d51b1fd6b504ca93469a5f9193fb, type: 2}
