@@ -11,12 +11,6 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/ClaudeTest.unity
     guid: 99c9720ab356a0642a771bea13969a05
-  - enabled: 1
-    path: Assets/Photon/FusionDemos/Fusion-Intro-Shared/Scenes/FusionIntroShared.unity
-    guid: 0c93e24ebcb1fed489eeaf2f36cfb925
-  - enabled: 1
-    path: Assets/Photon/FusionMenu/FusionSampleMenu.unity
-    guid: 74c3b330900a03442806ce69f1fe5955
   m_configObjects:
     Unity.XR.Oculus.Settings: {fileID: 11400000, guid: eb0404d65cde4a640a663159948d0329, type: 2}
     com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}

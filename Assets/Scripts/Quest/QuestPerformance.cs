@@ -1,15 +1,21 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.XR;
 
 namespace QuestOptimization
 {
     /// <summary>
-    /// Turns on the Quest settings that Unity leaves off by default: fixed foveated rendering (the edges of each eye are
-    /// shaded at a lower density) and a fixed display refresh rate. It starts itself on an Android (Quest) build, so no
-    /// scene has to contain it. Change the two values below and rebuild to tune.
+    /// Sets the Quest settings that Unity leaves off by default and fits the quality to the headset:
+    ///   * fixed foveated rendering (the edges of each eye are shaded at a lower density) and a fixed display refresh rate,
+    ///   * per headset (see <see cref="QuestDevice"/>): the Quest 2 gets 2x MSAA instead of 4x, no real-time sun shadows and a
+    ///     slightly lower level of detail, and the cheaper cave surface (see <see cref="CaveDetail"/>).
+    /// The Quest 3 keeps the authored quality. The Performance Lab (hold both grips and the left menu button) shows the frame
+    /// times and changes all of this live, and remembers what you chose.
     ///
+    /// It starts itself on an Android (Quest) build, so no scene has to contain it. The values below are the starting points.
     /// Check the result with `adb logcat -s Unity` (look for "[QuestPerformance]").
     /// </summary>
     public sealed class QuestPerformance : MonoBehaviour
@@ -23,10 +29,24 @@ namespace QuestOptimization
         /// </summary>
         public static readonly float RefreshRate = 72f;
 
+        /// <summary>The Quest 2's MSAA: Unity's advice for tile based headsets is 2x (4x doubles the multisample memory traffic).</summary>
+        public static readonly int LowTierMsaa = 2;
+
+        /// <summary>
+        /// Real-time shadow distance on the Quest 2 (0 = no shadows). The shadow pass draws the scene a second time and, with a
+        /// distance of 0, URP finds nothing to cast and skips it. The cave is lit by its lamps and has no use for sun shadows.
+        /// </summary>
+        public static readonly float LowTierShadowDistance = 0f;
+
+        /// <summary>Quality Settings LOD bias on the Quest 2 (1 = authored, lower = lower detail objects switch in sooner).</summary>
+        public static readonly float LowTierLodBias = 0.75f;
+
+        public static QuestPerformance Instance { get; private set; }
+
         readonly List<XRDisplaySubsystem> displays = new List<XRDisplaySubsystem>();
         bool applied;
 
-#if UNITY_ANDROID && !UNITY_EDITOR
+#if (UNITY_ANDROID && !UNITY_EDITOR)
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Create()
         {
@@ -35,6 +55,24 @@ namespace QuestOptimization
             host.AddComponent<QuestPerformance>();
         }
 #endif
+
+        /// <summary>Starts it by hand (the editor, tests).</summary>
+        public static QuestPerformance Ensure()
+        {
+            if (Instance != null)
+                return Instance;
+            var host = new GameObject("Quest Performance") { hideFlags = HideFlags.HideAndDontSave };
+            DontDestroyOnLoad(host);
+            return host.AddComponent<QuestPerformance>();
+        }
+
+        void Awake()
+        {
+            Instance = this;
+            Debug.Log($"[QuestPerformance] {QuestDevice.Description} -> performance tier {QuestDevice.Tier}");
+            ApplyTierSettings();
+            PerformanceLab.Create();
+        }
 
         IEnumerator Start()
         {
@@ -62,11 +100,34 @@ namespace QuestOptimization
                 return;
 
             display.foveatedRenderingLevel = FoveationLevel;
-            RequestRefreshRate();
+            RequestRefreshRate(RefreshRate);
             applied = true;
 
+            // (The physics step is deliberately left alone: the Gorilla locomotion moves the rig through its transform every frame and the
+            // rig's Rigidbody interpolates, so matching the step to the refresh rate made the movement sticky.)
             display.TryGetDisplayRefreshRate(out float hz);
-            Debug.Log($"[QuestPerformance] foveation {display.foveatedRenderingLevel:0.##}, display refresh {hz:0} Hz");
+            Debug.Log($"[QuestPerformance] foveation {display.foveatedRenderingLevel:0.##}, display refresh {hz:0} Hz, physics step {Time.fixedDeltaTime * 1000f:0.0} ms");
+            PerformanceLab.ApplySavedChoices();
+        }
+
+        /// <summary>The per headset quality.</summary>
+        public static void ApplyTierSettings()
+        {
+            if (QuestDevice.Tier != PerformanceTier.Low)
+                return;
+
+            CaveDetail.Set(true);
+
+            QualitySettings.lodBias = Mathf.Min(QualitySettings.lodBias, LowTierLodBias);
+
+            // These are asset values: in the editor they would change the asset on disk, so only a build does it.
+            if (Application.isEditor)
+                return;
+            var pipeline = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
+            if (pipeline == null)
+                return;
+            pipeline.msaaSampleCount = LowTierMsaa;
+            pipeline.shadowDistance = LowTierShadowDistance;
         }
 
         bool TryGetDisplay(out XRDisplaySubsystem display)
@@ -84,22 +145,48 @@ namespace QuestOptimization
             return false;
         }
 
-        static void RequestRefreshRate()
+        /// <summary>The running XR display, or null.</summary>
+        public static XRDisplaySubsystem GetRunningDisplay()
         {
-            if (RefreshRate <= 0f)
+            var list = new List<XRDisplaySubsystem>();
+            SubsystemManager.GetSubsystems(list);
+            foreach (XRDisplaySubsystem candidate in list)
+            {
+                if (candidate.running)
+                    return candidate;
+            }
+            return null;
+        }
+
+        /// <summary>The refresh rates this headset offers (empty when that cannot be asked).</summary>
+        public static float[] AvailableRefreshRates()
+        {
+            try
+            {
+                return OVRPlugin.systemDisplayFrequenciesAvailable;
+            }
+            catch (System.Exception)
+            {
+                return new float[0];
+            }
+        }
+
+        public static void RequestRefreshRate(float hz)
+        {
+            if (hz <= 0f)
                 return;
 
             try
             {
                 foreach (float available in OVRPlugin.systemDisplayFrequenciesAvailable)
                 {
-                    if (Mathf.Abs(available - RefreshRate) < 0.5f)
+                    if (Mathf.Abs(available - hz) < 0.5f)
                     {
                         OVRPlugin.systemDisplayFrequency = available;
                         return;
                     }
                 }
-                Debug.LogWarning($"[QuestPerformance] This headset does not offer {RefreshRate:0} Hz; keeping the system default.");
+                Debug.LogWarning($"[QuestPerformance] This headset does not offer {hz:0} Hz; keeping the system default.");
             }
             catch (System.Exception e)
             {

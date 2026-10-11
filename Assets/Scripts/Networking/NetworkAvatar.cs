@@ -41,8 +41,30 @@ namespace GorillaNet
         [Tooltip("Debug: also draw your own avatar, to see what the other players see.")]
         public bool showOwnAvatar;
 
+        /// <summary>Same as <see cref="showOwnAvatar"/>, but takes effect right away on an avatar that is already spawned.</summary>
+        public bool ShowOwnAvatar
+        {
+            get => showOwnAvatar;
+            set
+            {
+                if (showOwnAvatar == value)
+                    return;
+                showOwnAvatar = value;
+                ApplyVisibility();
+            }
+        }
+
         [Tooltip("Turns the player's color around the hue wheel (0-1). The solo mirror uses it to look different from your own avatar.")]
         [Range(0f, 1f)] public float hueShift;
+
+        [Header("Fingers: PC debug (editor and PC builds only, does nothing on the Quest)")]
+        [Tooltip("Lets you test the fingers without a headset. Hold the keys, or drag the sliders below on the spawned avatar while the game runs; they are added to whatever the controllers do (the larger value wins), and other players see them too.\n" +
+                 "Left hand:  1 = trigger,  2 = grip,  3 = X button.\n" +
+                 "Right hand: 8 = trigger,  9 = grip,  0 = A button.\n" +
+                 "(Pressing a key during the wake-up intro skips the intro.)")]
+        public bool pcFingerDebug = true;
+        public HandInput debugLeftHand;
+        public HandInput debugRightHand;
 
         static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         static readonly int ColorId = Shader.PropertyToID("_Color");
@@ -52,8 +74,12 @@ namespace GorillaNet
         {
             if (player == PlayerRef.None)
                 return Color.gray;
-            return Color.HSVToRGB(Mathf.Repeat(player.PlayerId * 0.61803398f + hueShift, 1f), saturation, value);
+            return ColorForPlayerId(player.PlayerId, saturation, value, hueShift);
         }
+
+        /// <summary>The same color from a plain player number (the <see cref="OfflineRig"/> has no <see cref="PlayerRef"/>).</summary>
+        public static Color ColorForPlayerId(int playerId, float saturation = 0.65f, float value = 0.95f, float hueShift = 0f) =>
+            Color.HSVToRGB(Mathf.Repeat(playerId * 0.61803398f + hueShift, 1f), saturation, value);
 
         /// <summary>The player this avatar belongs to.</summary>
         public PlayerRef Owner => Object != null && Object.IsValid ? Object.StateAuthority : PlayerRef.None;
@@ -61,12 +87,20 @@ namespace GorillaNet
         /// <summary>True for the avatar this peer controls (the one that follows the local rig).</summary>
         public bool IsMine => Object != null && Object.IsValid && Object.HasStateAuthority;
 
+        /// <summary>The fingers of each hand (a <see cref="HandInput"/> packed into an int), written by the authority, read by everybody else.</summary>
+        [Networked] public int LeftFingerBits { get; set; }
+        [Networked] public int RightFingerBits { get; set; }
+
         Renderer[] allRenderers;
         IAvatarPoseSource poseSource;
+        AvatarBodyRig bodyRig;
+        int pendingLeftBits;
+        int pendingRightBits;
 
         public override void Spawned()
         {
             allRenderers = GetComponentsInChildren<Renderer>(true);
+            bodyRig = GetComponentInChildren<AvatarBodyRig>(true);
 
             var block = new MaterialPropertyBlock();
             Color color = Color.Lerp(Color.white, ColorForPlayer(Owner, colorSaturation, colorValue, hueShift), tintStrength);
@@ -78,9 +112,7 @@ namespace GorillaNet
                     r.SetPropertyBlock(block);
             }
 
-            bool visible = !IsMine || showOwnAvatar;
-            foreach (var r in allRenderers)
-                r.enabled = visible;
+            ApplyVisibility();
 
             if (IsMine)
             {
@@ -91,10 +123,55 @@ namespace GorillaNet
             }
         }
 
+        void ApplyVisibility()
+        {
+            if (allRenderers == null)
+                return;
+            bool visible = !IsMine || showOwnAvatar;
+            foreach (var r in allRenderers)
+            {
+                if (r != null)
+                    r.enabled = visible;
+            }
+        }
+
         public override void Despawned(NetworkRunner runner, bool hasState)
         {
             poseSource = null;
         }
+
+        /// <summary>
+        /// Adds the keyboard keys and the debug sliders to the controllers' input (editor and PC builds only). False when it is off.
+        /// Shared with <see cref="OfflineRig"/>, so the keys work the same offline.
+        /// </summary>
+        public static bool ApplyPcFingerDebug(bool enabled, HandInput sliderLeft, HandInput sliderRight, ref HandInput left, ref HandInput right)
+        {
+#if UNITY_EDITOR || UNITY_STANDALONE
+            if (!enabled)
+                return false;
+
+            left = Larger(left, sliderLeft);
+            right = Larger(right, sliderRight);
+#if ENABLE_INPUT_SYSTEM
+            var keyboard = UnityEngine.InputSystem.Keyboard.current;
+            if (keyboard != null)
+            {
+                left = Larger(left, new HandInput(Held(keyboard.digit2Key), Held(keyboard.digit1Key), Held(keyboard.digit3Key)));
+                right = Larger(right, new HandInput(Held(keyboard.digit9Key), Held(keyboard.digit8Key), Held(keyboard.digit0Key)));
+            }
+#endif
+            return true;
+#else
+            return false;
+#endif
+        }
+
+#if (UNITY_EDITOR || UNITY_STANDALONE) && ENABLE_INPUT_SYSTEM
+        static float Held(UnityEngine.InputSystem.Controls.KeyControl key) => key.isPressed ? 1f : 0f;
+#endif
+
+        static HandInput Larger(HandInput a, HandInput b) =>
+            new HandInput(Mathf.Max(a.grip, b.grip), Mathf.Max(a.trigger, b.trigger), Mathf.Max(a.thumb, b.thumb));
 
         /// <summary>Use this source instead of <see cref="PoseSourceFactory"/> for this avatar. Call it before the avatar is spawned.</summary>
         public void SetPoseSource(IAvatarPoseSource source)
@@ -106,7 +183,41 @@ namespace GorillaNet
         {
             // After the rig has moved this frame (Player.Update), before the next network tick reads the transforms.
             if (poseSource != null && IsMine)
+            {
                 FollowPoseSource();
+                FollowFingers();
+            }
+            else if (bodyRig != null && Object != null && Object.IsValid)
+            {
+                // Somebody else's avatar: the fingers the authority sent. (AvatarBodyRig runs after this and eases towards them.)
+                bodyRig.SetHandInput(HandInput.Unpack(LeftFingerBits), HandInput.Unpack(RightFingerBits));
+            }
+        }
+
+        // Runs on the state authority only (Shared mode): sends what LateUpdate read from the controllers this frame.
+        public override void FixedUpdateNetwork()
+        {
+            if (!Object.HasStateAuthority)
+                return;
+            if (LeftFingerBits != pendingLeftBits)
+                LeftFingerBits = pendingLeftBits;
+            if (RightFingerBits != pendingRightBits)
+                RightFingerBits = pendingRightBits;
+        }
+
+        void FollowFingers()
+        {
+            HandInput left = default, right = default;
+            bool hasController = poseSource is IAvatarHandInputSource source && source.TryGetHandInput(out left, out right);
+            bool debugged = ApplyPcFingerDebug(pcFingerDebug, debugLeftHand, debugRightHand, ref left, ref right);
+            if (!hasController && !debugged)
+                return;
+
+            pendingLeftBits = left.Pack();
+            pendingRightBits = right.Pack();
+            // Your own avatar (the solo view) shows them at once, without waiting for the network.
+            if (bodyRig != null)
+                bodyRig.SetHandInput(left, right);
         }
 
         void FollowPoseSource()

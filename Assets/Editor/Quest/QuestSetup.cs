@@ -84,6 +84,82 @@ namespace QuestOptimization.Editor
             },
             new Step
             {
+                name = "OpenXR: symmetric projection on (only when the original Quest is no longer a target device)",
+                why = "Renders both eyes with a symmetric field of view, which needs fewer pixels for the same picture (Meta: a performance gain at every IPD). Vulkan only, which this project is. " +
+                      "The build refuses it while the original Quest (2019) is ticked under OpenXR > Meta Quest Support > Target Devices, so this step leaves it off in that case: untick \"Quest\" there and run this again to get it.",
+                isDone = () => (OriginalQuestIsTarget() && NoteSymmetricProjectionSkipped())
+                               || (OpenXrBool(OpenXRSettings.GetSettingsForBuildTargetGroup(Android), "m_symmetricProjection") == true
+                                   && OpenXrBool(FindFeature("MetaQuestFeature"), "m_symmetricProjection") == true),
+                apply = () =>
+                {
+                    SetSerialized(OpenXRSettings.GetSettingsForBuildTargetGroup(Android), "m_symmetricProjection", true);
+                    SetSerialized(FindFeature("MetaQuestFeature"), "m_symmetricProjection", true);
+                }
+            },
+            new Step
+            {
+                name = "OpenXR: optimize buffer discards on",
+                why = "Lets the multisampled color and depth buffers stay in tile memory and never be written to RAM (memoryless MSAA on Vulkan).",
+                isDone = () => OpenXrBool(OpenXRSettings.GetSettingsForBuildTargetGroup(Android), "m_optimizeBufferDiscards") == true
+                               && OpenXrBool(FindFeature("MetaQuestFeature"), "m_optimizeBufferDiscards") == true,
+                apply = () =>
+                {
+                    SetSerialized(OpenXRSettings.GetSettingsForBuildTargetGroup(Android), "m_optimizeBufferDiscards", true);
+                    SetSerialized(FindFeature("MetaQuestFeature"), "m_optimizeBufferDiscards", true);
+                }
+            },
+            new Step
+            {
+                name = "OpenXR: Application SpaceWarp off",
+                why = "Nothing in the game turns SpaceWarp on, so the feature only adds an unused OpenXR extension and the passes it prepares for motion vectors.",
+                isDone = () => !FeatureEnabled("SpaceWarpFeature") && !FeatureEnabled("MetaXRSpaceWarp"),
+                apply = () =>
+                {
+                    if (FindFeature("SpaceWarpFeature") != null) SetFeature("SpaceWarpFeature", false);
+                    if (FindFeature("MetaXRSpaceWarp") != null) SetFeature("MetaXRSpaceWarp", false);
+                }
+            },
+            new Step
+            {
+                name = "Frame timing stats on",
+                why = "Lets the Performance Lab show CPU and GPU frame times in the headset. (A few timestamp queries per frame.)",
+                isDone = () => PlayerSettings.enableFrameTimingStats,
+                apply = () => PlayerSettings.enableFrameTimingStats = true
+            },
+            new Step
+            {
+                name = "URP (Android quality level): no reflection probe blending / box projection, no adaptive performance",
+                why = "Blending two probes and projecting onto a box add math to every lit pixel; the scenes use baked probes and are lit mostly by lightmaps and lamps. Adaptive Performance has no provider here.",
+                isDone = () => AndroidUrpAssets().All(a => UrpFlag(a, "m_ReflectionProbeBlending") == false
+                                                           && UrpFlag(a, "m_ReflectionProbeBoxProjection") == false
+                                                           && UrpFlag(a, "m_UseAdaptivePerformance") == false),
+                apply = () =>
+                {
+                    foreach (UniversalRenderPipelineAsset asset in AndroidUrpAssets())
+                    {
+                        foreach (string property in new[] { "m_ReflectionProbeBlending", "m_ReflectionProbeBoxProjection", "m_UseAdaptivePerformance" })
+                            SetSerialized(asset, property, false);
+                    }
+                }
+            },
+            new Step
+            {
+                name = "Cave textures: ASTC 6x6, 2x anisotropic",
+                why = "The cave rock and dirt maps were ASTC 4x4 (8 bits per pixel, high quality) with 4x anisotropic filtering. 6x6 reads 2.2x fewer bytes and 2x aniso costs half the texture samples; the surface is rough rock, which hides both.",
+                isDone = () => CaveTextures().All(p => { var i = (TextureImporter)AssetImporter.GetAtPath(p); return i.textureCompression == TextureImporterCompression.Compressed && i.anisoLevel <= 2; }),
+                apply = () =>
+                {
+                    foreach (string path in CaveTextures())
+                    {
+                        var importer = (TextureImporter)AssetImporter.GetAtPath(path);
+                        importer.textureCompression = TextureImporterCompression.Compressed;
+                        importer.anisoLevel = Mathf.Min(importer.anisoLevel, 2);
+                        importer.SaveAndReimport();
+                    }
+                }
+            },
+            new Step
+            {
                 name = "URP (Android quality level): switch off unused features",
                 why = "Light layers, light cookies, LOD cross fade and lens flares are unused by the scenes, but each one adds shader work or variants.",
                 isDone = () => AndroidUrpAssets().All(a => UrpFlag(a, "m_SupportsLightLayers") == false
@@ -179,6 +255,37 @@ namespace QuestOptimization.Editor
                 throw new InvalidOperationException($"OpenXR feature {typeName} not found for Android.");
             feature.enabled = enabled;
             EditorUtility.SetDirty(feature);
+        }
+
+        static bool? OpenXrBool(UnityEngine.Object target, string property) => SerializedBool(target, property);
+
+        static bool NoteSymmetricProjectionSkipped()
+        {
+            Debug.LogWarning($"{Tag}Symmetric projection left off: the original Quest is still a target device (OpenXR > Meta Quest Support > Target Devices), and the build refuses symmetric projection with it. Untick \"Quest\" there if you no longer support it, then run this again.");
+            return true;
+        }
+
+        // True while the original Quest (manifest name "quest") is ticked in the Meta Quest feature's target devices.
+        static bool OriginalQuestIsTarget()
+        {
+            OpenXRFeature feature = FindFeature("MetaQuestFeature");
+            if (feature == null)
+                return false;
+            SerializedProperty devices = new SerializedObject(feature).FindProperty("targetDevices");
+            if (devices == null || !devices.isArray)
+                return false;
+            for (int i = 0; i < devices.arraySize; i++)
+            {
+                SerializedProperty device = devices.GetArrayElementAtIndex(i);
+                if (device.FindPropertyRelative("manifestName")?.stringValue == "quest")
+                    return device.FindPropertyRelative("enabled")?.boolValue == true;
+            }
+            return false;
+        }
+
+        static IEnumerable<string> CaveTextures()
+        {
+            return AssetDatabase.FindAssets("t:Texture2D", new[] { "Assets/CaveGenerator/Textures" }).Select(AssetDatabase.GUIDToAssetPath);
         }
 
         static int FoveationApi() => SerializedInt(OpenXRSettings.GetSettingsForBuildTargetGroup(Android), "m_foveatedRenderingApi") ?? -1;

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.XR;
 
 namespace GorillaNet
 {
@@ -13,9 +14,80 @@ namespace GorillaNet
         bool TryGetPoses(out Pose head, out Pose leftHand, out Pose rightHand);
     }
 
-    /// <summary>Reads the poses from the Gorilla locomotion rig (<see cref="GorillaLocomotion.Player"/>).</summary>
-    public class GorillaRigPoseSource : IAvatarPoseSource
+    /// <summary>What one hand's controller is doing, as far as the avatar's fingers are concerned (all 0 = open hand, 1 = fully pressed).</summary>
+    [System.Serializable]
+    public struct HandInput
     {
+        /// <summary>The grip (middle finger) squeeze: curls the ring finger.</summary>
+        [Range(0f, 1f)] public float grip;
+        /// <summary>The trigger (index finger) pull: curls the pointer finger.</summary>
+        [Range(0f, 1f)] public float trigger;
+        /// <summary>The A (right) / X (left) button: curls the thumb.</summary>
+        [Range(0f, 1f)] public float thumb;
+
+        public HandInput(float grip, float trigger, float thumb)
+        {
+            this.grip = grip;
+            this.trigger = trigger;
+            this.thumb = thumb;
+        }
+
+        /// <summary>The three values as one int (8 bits each), which is what goes over the network.</summary>
+        public int Pack() => Quantize(grip) | (Quantize(trigger) << 8) | (Quantize(thumb) << 16);
+
+        public static HandInput Unpack(int bits) =>
+            new HandInput((bits & 0xFF) / 255f, ((bits >> 8) & 0xFF) / 255f, ((bits >> 16) & 0xFF) / 255f);
+
+        static int Quantize(float value) => Mathf.Clamp(Mathf.RoundToInt(value * 255f), 0, 255);
+    }
+
+    /// <summary>
+    /// A pose source that also knows what the controllers' fingers are doing. <see cref="NetworkAvatar"/> sends it along
+    /// with the poses so the other players see the hands close. Optional: sources without it keep the fingers open.
+    /// </summary>
+    public interface IAvatarHandInputSource
+    {
+        bool TryGetHandInput(out HandInput leftHand, out HandInput rightHand);
+    }
+
+    /// <summary>Reads the poses from the Gorilla locomotion rig (<see cref="GorillaLocomotion.Player"/>).</summary>
+    public class GorillaRigPoseSource : IAvatarPoseSource, IAvatarHandInputSource
+    {
+        InputDevice leftDevice;
+        InputDevice rightDevice;
+
+        /// <summary>Grip, trigger and A / X straight from the controllers (UnityEngine.XR, the same source the hand grabbers use).</summary>
+        public bool TryGetHandInput(out HandInput leftHand, out HandInput rightHand)
+        {
+            leftHand = Read(ref leftDevice, XRNode.LeftHand);
+            rightHand = Read(ref rightDevice, XRNode.RightHand);
+            return true;
+        }
+
+        static HandInput Read(ref InputDevice device, XRNode node)
+        {
+            var input = new HandInput();
+            if (!device.isValid)
+                device = InputDevices.GetDeviceAtXRNode(node);
+            if (!device.isValid)
+                return input;
+
+            if (device.TryGetFeatureValue(CommonUsages.grip, out float grip))
+                input.grip = grip;
+            else if (device.TryGetFeatureValue(CommonUsages.gripButton, out bool gripButton))
+                input.grip = gripButton ? 1f : 0f;
+
+            if (device.TryGetFeatureValue(CommonUsages.trigger, out float trigger))
+                input.trigger = trigger;
+            else if (device.TryGetFeatureValue(CommonUsages.triggerButton, out bool triggerButton))
+                input.trigger = triggerButton ? 1f : 0f;
+
+            // A on the right controller, X on the left one.
+            if (device.TryGetFeatureValue(CommonUsages.primaryButton, out bool primary))
+                input.thumb = primary ? 1f : 0f;
+            return input;
+        }
+
         public bool TryGetPoses(out Pose head, out Pose leftHand, out Pose rightHand)
         {
             head = leftHand = rightHand = Pose.identity;
@@ -47,7 +119,7 @@ namespace GorillaNet
     /// when the first pose arrived. Used for the solo mirror avatar: you wave, your mirror image waves back.
     /// The mirror plane stays where it was put; walk around it and the image stays behind it.
     /// </summary>
-    public class MirroredPoseSource : IAvatarPoseSource
+    public class MirroredPoseSource : IAvatarPoseSource, IAvatarHandInputSource
     {
         readonly IAvatarPoseSource inner;
         readonly float distance;
@@ -80,6 +152,17 @@ namespace GorillaNet
             // In a mirror your right hand is the image's left hand.
             leftHand = Mirror(r);
             rightHand = Mirror(l);
+            return true;
+        }
+
+        public bool TryGetHandInput(out HandInput leftHand, out HandInput rightHand)
+        {
+            leftHand = rightHand = default;
+            if (!(inner is IAvatarHandInputSource source) || !source.TryGetHandInput(out HandInput l, out HandInput r))
+                return false;
+            // The image's left hand is your right hand.
+            leftHand = r;
+            rightHand = l;
             return true;
         }
 

@@ -75,6 +75,11 @@ namespace GorillaNet
         {
             netTransform = GetComponent<NetworkTransform>();
 
+            // This object outlives a runner (NetworkLauncher rejoins with a new one). If the connection dropped while it was
+            // in a hand, its Rigidbody is still frozen from the hold; the network state says it is free now.
+            if (Object.HasStateAuthority && !IsHeld)
+                body.isKinematic = false;
+
             var player = GorillaLocomotion.Player.Instance;
             if (ignoreLocalPlayerBody && player != null)
             {
