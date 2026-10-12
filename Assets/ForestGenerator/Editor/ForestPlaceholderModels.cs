@@ -136,6 +136,7 @@ namespace HavocForest.EditorTools
             });
 
             AssetDatabase.SaveAssets();
+            if (rebuild) RefreshOpenForests();
             return made;
         }
 
@@ -215,12 +216,14 @@ namespace HavocForest.EditorTools
                 }
             }
             AssetDatabase.SaveAssets();
+            if (rebuild) RefreshOpenForests();
             return made;
         }
 
         static ForestMeshBuilder LampBody(int v, out Vector3 head)
         {
             var mb = new ForestMeshBuilder();
+            mb.surface = ForestSurface.Iron;
             float lean = v == 0 ? 0f : 0.35f;       // the second one leans and has a shorter arm
             float reach = v == 0 ? 1.6f : 1.25f;
             System.Func<float, float, Color> iron = (t, a) =>
@@ -261,6 +264,55 @@ namespace HavocForest.EditorTools
             AssetDatabase.CreateFolder(parent, Path.GetFileName(folder));
         }
 
+        /// <summary>After a rebuild: every open forest rebuilds its draw lists from the new models, and the views repaint.</summary>
+        static void RefreshOpenForests()
+        {
+            ForestPrefabInfo.ClearCache();
+            foreach (ForestInstancedRenderer r in Object.FindObjectsByType<ForestInstancedRenderer>(FindObjectsSortMode.None)) r.Rebuild();
+            SceneView.RepaintAll();
+        }
+
+        /// <summary>
+        /// Overwrites dst with the geometry of src through the Mesh API. EditorUtility.CopySerialized looks the same on disk and
+        /// in the Inspector, but Unity does not re-upload the mesh to the graphics card afterwards: a scene that is already open
+        /// keeps drawing the OLD model until it is reloaded. Setting the data through the API makes the open scene follow at once.
+        /// </summary>
+        public static void CopyMeshData(Mesh src, Mesh dst)
+        {
+            var vertices = new List<Vector3>();
+            var normals = new List<Vector3>();
+            var colors = new List<Color>();
+            src.GetVertices(vertices);
+            src.GetNormals(normals);
+            src.GetColors(colors);
+            int uvDimension = src.HasVertexAttribute(UnityEngine.Rendering.VertexAttribute.TexCoord0)
+                ? src.GetVertexAttributeDimension(UnityEngine.Rendering.VertexAttribute.TexCoord0) : 0;
+            var uv3 = new List<Vector3>();
+            var uv2 = new List<Vector2>();
+            if (uvDimension == 3) src.GetUVs(0, uv3);
+            else if (uvDimension == 2) src.GetUVs(0, uv2);
+            int subMeshes = src.subMeshCount;
+            var triangles = new List<int>[subMeshes];
+            for (int s = 0; s < subMeshes; s++)
+            {
+                triangles[s] = new List<int>();
+                src.GetTriangles(triangles[s], s);
+            }
+            Bounds bounds = src.bounds;
+
+            dst.Clear(false);
+            dst.indexFormat = src.indexFormat;
+            dst.SetVertices(vertices);
+            if (normals.Count == vertices.Count) dst.SetNormals(normals);
+            if (colors.Count == vertices.Count) dst.SetColors(colors);
+            if (uvDimension == 3) dst.SetUVs(0, uv3);
+            else if (uvDimension == 2) dst.SetUVs(0, uv2);
+            dst.subMeshCount = subMeshes;
+            for (int s = 0; s < subMeshes; s++) dst.SetTriangles(triangles[s], s, false);
+            dst.bounds = bounds;
+            EditorUtility.SetDirty(dst);
+        }
+
         /// <summary>All levels of a model in one asset file; existing meshes are overwritten in place so references stay valid.</summary>
         static Mesh[] SaveMeshes(string name, Mesh[] meshes)
         {
@@ -271,13 +323,17 @@ namespace HavocForest.EditorTools
                 var m = o as Mesh;
                 if (m != null) existing[m.name] = m;
             }
+            // Unity names a file's main mesh after the file, so the first level is not found under its own name: reuse the
+            // main mesh for it, or every rebuild would add a second copy and leave the old one behind
+            var main = AssetDatabase.LoadMainAssetAtPath(path) as Mesh;
+            if (main != null && meshes.Length > 0 && !existing.ContainsKey(meshes[0].name)) existing[meshes[0].name] = main;
             var result = new Mesh[meshes.Length];
             for (int i = 0; i < meshes.Length; i++)
             {
                 Mesh target;
                 if (existing.TryGetValue(meshes[i].name, out target))
                 {
-                    EditorUtility.CopySerialized(meshes[i], target);
+                    CopyMeshData(meshes[i], target);
                     Object.DestroyImmediate(meshes[i]);
                 }
                 else
@@ -285,6 +341,12 @@ namespace HavocForest.EditorTools
                     target = meshes[i];
                     if (i == 0 && existing.Count == 0) AssetDatabase.CreateAsset(target, path);
                     else AssetDatabase.AddObjectToAsset(target, path);
+                }
+                // the main mesh keeps the file's name (Unity warns about every file whose main object is named differently)
+                if (i == 0 && target.name != name)
+                {
+                    target.name = name;
+                    EditorUtility.SetDirty(target);
                 }
                 result[i] = target;
             }
@@ -392,6 +454,7 @@ namespace HavocForest.EditorTools
             mb.Tube(Line(new Vector3(0f, -0.3f, 0f), new Vector3(0f, h * 0.97f, 0f), lod == 0 ? 5 : 3, 0.12f, 900 + v),
                     t => Mathf.Lerp(trunkR, 0.04f, Mathf.Pow(t, 0.8f)), sides, (t, a) => Bark(t, a, 40 + v), false, false);
 
+            mb.surface = ForestSurface.Needles;
             int tiers = lod == 0 ? 13 : lod == 1 ? 7 : 3;
             int points = lod == 0 ? 9 : lod == 1 ? 7 : 5;
             Color top = Lin(0.105f, 0.16f, 0.12f), tip = Lin(0.17f, 0.25f, 0.17f), under = Lin(0.05f, 0.075f, 0.06f);
@@ -416,6 +479,7 @@ namespace HavocForest.EditorTools
             float h = v == 0 ? 4.5f : 3.4f;
             mb.Tube(Line(new Vector3(0f, -0.2f, 0f), new Vector3(0f, h, 0f), 2, 0f, 0), t => Mathf.Lerp(0.09f, 0.02f, t), lod == 0 ? 5 : 4,
                     (t, a) => Bark(t, a, 61), false, false);
+            mb.surface = ForestSurface.Needles;
             int tiers = lod == 0 ? 9 : lod == 1 ? 5 : 3;
             int points = lod == 0 ? 8 : lod == 1 ? 6 : 5;
             Color top = Lin(0.12f, 0.19f, 0.12f), tip = Lin(0.2f, 0.29f, 0.17f), under = Lin(0.05f, 0.08f, 0.05f);
@@ -457,6 +521,7 @@ namespace HavocForest.EditorTools
                 ends.Add(end);
             }
             ends.Add(new Vector3(0f, h * 0.88f, 0f));
+            mb.surface = ForestSurface.Leaves;
             int clumps = lod == 0 ? 8 : lod == 1 ? 5 : 2;
             int sub = lod == 0 ? 1 : 0;
             for (int c = 0; c < clumps; c++)
@@ -481,6 +546,7 @@ namespace HavocForest.EditorTools
         {
             var mb = new ForestMeshBuilder();
             var rng = new ForestRandom(800 + v, 1);
+            mb.surface = ForestSurface.BirchBark;
             float h = v == 0 ? 15f : 12.5f;
             int sides = lod == 0 ? 7 : lod == 1 ? 5 : 4;
             var trunk = Line(new Vector3(0f, -0.2f, 0f), new Vector3(0.3f, h, 0.1f), lod == 0 ? 8 : 4, 0.25f, 810 + v);
@@ -497,6 +563,7 @@ namespace HavocForest.EditorTools
                     mb.Tube(Line(new Vector3(0.15f, y, 0.05f), new Vector3(Mathf.Cos(a) * 1.8f, y + 1.5f, Mathf.Sin(a) * 1.8f), 3, 0.2f, 830 + b), t => Mathf.Lerp(0.06f, 0.015f, t), 4,
                             (t, ang) => Lin(0.35f, 0.32f, 0.28f), false, false);
                 }
+            mb.surface = ForestSurface.Leaves;
             int clumps = lod == 0 ? 7 : lod == 1 ? 4 : 2;
             Color leaf = v == 0 ? Lin(0.55f, 0.54f, 0.2f) : Lin(0.68f, 0.56f, 0.19f);
             for (int c = 0; c < clumps; c++)
@@ -521,6 +588,7 @@ namespace HavocForest.EditorTools
         {
             var mb = new ForestMeshBuilder();
             var rng = new ForestRandom(900 + v, 1);
+            mb.surface = ForestSurface.Wood;
             float h = v == 0 ? 13f : 9f;
             int sides = lod == 0 ? 7 : lod == 1 ? 5 : 4;
             mb.Tube(Line(new Vector3(0f, -0.3f, 0f), new Vector3(0.4f, h, -0.2f), lod == 0 ? 6 : 3, 0.3f, 910 + v), t => Mathf.Lerp(0.32f, 0.13f, t), sides,
@@ -543,6 +611,7 @@ namespace HavocForest.EditorTools
         {
             var mb = new ForestMeshBuilder();
             var rng = new ForestRandom(950, 1);
+            mb.surface = ForestSurface.Bark;
             float h = 26f;
             int sides = lod == 0 ? 10 : lod == 1 ? 7 : 5;
             mb.Tube(Line(new Vector3(0f, -0.6f, 0f), new Vector3(0.8f, h, 0.5f), lod == 0 ? 8 : 4, 0.6f, 951), t => Mathf.Lerp(1.15f, 0.4f, Mathf.Pow(t, 0.7f)), sides,
@@ -573,6 +642,7 @@ namespace HavocForest.EditorTools
         {
             var mb = new ForestMeshBuilder();
             var rng = new ForestRandom(1100 + v, 1);
+            mb.surface = ForestSurface.Leaves;
             int blobs = lod == 0 ? 6 : 2;
             Color baseC = v == 0 ? Lin(0.14f, 0.21f, 0.11f) : Lin(0.22f, 0.24f, 0.11f);
             for (int b = 0; b < blobs; b++)
@@ -597,6 +667,7 @@ namespace HavocForest.EditorTools
         {
             var mb = new ForestMeshBuilder();
             var rng = new ForestRandom(1200, 1);
+            mb.surface = ForestSurface.Blades;
             int fronds = lod == 0 ? 9 : 5;
             int segs = lod == 0 ? 6 : 4;
             for (int f = 0; f < fronds; f++)
@@ -622,6 +693,7 @@ namespace HavocForest.EditorTools
         {
             var mb = new ForestMeshBuilder();
             var rng = new ForestRandom(1300 + v, 1);
+            mb.surface = ForestSurface.Blades;
             int blades = v == 0 ? 14 : 10;
             for (int b = 0; b < blades; b++)
             {
@@ -643,6 +715,7 @@ namespace HavocForest.EditorTools
         static ForestMeshBuilder Branch(int v)
         {
             var mb = new ForestMeshBuilder();
+            mb.surface = ForestSurface.Wood;
             float len = v == 0 ? 1.7f : 1.1f;
             var main = Line(new Vector3(-len * 0.5f, 0.05f, 0f), new Vector3(len * 0.5f, 0.03f, 0f), 4, 0.15f, 1400 + v);
             mb.Tube(main, t => Mathf.Lerp(0.05f, 0.015f, t), 5, (t, a) => Lin(0.28f, 0.23f, 0.18f), true, true);
@@ -655,6 +728,7 @@ namespace HavocForest.EditorTools
         {
             var mb = new ForestMeshBuilder();
             var rng = new ForestRandom(1500, 1);
+            mb.surface = ForestSurface.Stone;
             for (int i = 0; i < 5; i++)
             {
                 Vector2 o = rng.InsideCircle() * 0.45f;
@@ -671,6 +745,7 @@ namespace HavocForest.EditorTools
         {
             var mb = new ForestMeshBuilder();
             var rng = new ForestRandom(1600, 1);
+            mb.surface = ForestSurface.Bark;
             for (int i = 0; i < 3; i++)
             {
                 float a = rng.Angle();
@@ -687,6 +762,7 @@ namespace HavocForest.EditorTools
         static ForestMeshBuilder Rock(int lod, int v)
         {
             var mb = new ForestMeshBuilder();
+            mb.surface = ForestSurface.Stone;
             float r = v == 0 ? 0.7f : v == 1 ? 0.55f : 0.9f;
             Vector3 squash = v == 0 ? new Vector3(1.2f, 0.75f, 1f) : v == 1 ? new Vector3(1f, 0.9f, 0.85f) : new Vector3(1.35f, 0.55f, 1.1f);
             var center = new Vector3(0f, r * squash.y - 0.25f, 0f);
@@ -698,6 +774,7 @@ namespace HavocForest.EditorTools
         static ForestMeshBuilder Boulder(int lod, int v)
         {
             var mb = new ForestMeshBuilder();
+            mb.surface = ForestSurface.Stone;
             float r = v == 0 ? 1.6f : 1.9f;
             Vector3 squash = v == 0 ? new Vector3(1.3f, 0.85f, 1.05f) : new Vector3(1.5f, 0.6f, 1.2f);
             var center = new Vector3(0f, r * squash.y - 0.4f, 0f);
@@ -710,6 +787,7 @@ namespace HavocForest.EditorTools
         static ForestMeshBuilder CliffRock(int lod, int v)
         {
             var mb = new ForestMeshBuilder();
+            mb.surface = ForestSurface.Stone;
             float r = 3.2f;
             Vector3 squash = v == 0 ? new Vector3(1.6f, 1.15f, 0.85f) : v == 1 ? new Vector3(1.9f, 0.85f, 1.25f) : new Vector3(0.95f, 1.7f, 0.9f);
             var center = new Vector3(0f, r * squash.y * 0.62f, 0f);
@@ -731,6 +809,7 @@ namespace HavocForest.EditorTools
         static ForestMeshBuilder SplitBoulder(int lod)
         {
             var mb = new ForestMeshBuilder();
+            mb.surface = ForestSurface.Stone;
             for (int half = 0; half < 2; half++)
             {
                 float side = half == 0 ? -1f : 1f;
@@ -745,6 +824,7 @@ namespace HavocForest.EditorTools
         {
             var mb = new ForestMeshBuilder();
             var rng = new ForestRandom(1900, 1);
+            mb.surface = ForestSurface.Stone;
             float y = 0f;
             int stones = lod == 0 ? 7 : 4;
             for (int i = 0; i < stones; i++)
@@ -796,6 +876,7 @@ namespace HavocForest.EditorTools
                 c.a = 0f;
                 mb.col[i] = c;
             }
+            mb.surface = ForestSurface.Wood;                     // the broken branch stubs on top
             if (lod == 0)
                 for (int s = 0; s < 3; s++)
                 {
@@ -807,12 +888,60 @@ namespace HavocForest.EditorTools
             return mb;
         }
 
+        /// <summary>
+        /// A clean sawn top for the stump, closed so nothing shows through: a small rounded edge (lod 0), then one flat disc
+        /// that is lighter at the rim and darker at the heart. The tube's top ring is nearly level, so the disc is one plane
+        /// and shades evenly. ringStart is the index of the ring's first vertex in the builder.
+        /// </summary>
+        static void StumpTop(ForestMeshBuilder mb, int ringStart, int sides, bool bevel)
+        {
+            var outer = new Vector3[sides];
+            Vector3 center = Vector3.zero;
+            for (int j = 0; j < sides; j++)
+            {
+                outer[j] = mb.pos[ringStart + j];
+                center += outer[j];
+            }
+            center /= sides;
+
+            Color rim = Lin(0.20f, 0.16f, 0.12f), cut = Lin(0.40f, 0.32f, 0.23f), heart = Lin(0.31f, 0.24f, 0.17f);
+            mb.surface = ForestSurface.Wood;
+            // a face is wound so that its normal points up (the whole top faces up)
+            System.Action<Vector3, Vector3, Vector3, Color, Color, Color> face = (a, b, c, ca, cb, cc) =>
+            {
+                if (Vector3.Dot(Vector3.Cross(b - a, c - a), Vector3.up) >= 0f) mb.FlatT(a, b, c, ca, cb, cc);
+                else mb.FlatT(a, c, b, ca, cc, cb);
+            };
+
+            Vector3 lift = Vector3.up * (bevel ? 0.03f : 0f);
+            var inner = new Vector3[sides];
+            for (int j = 0; j < sides; j++) inner[j] = bevel ? center + (outer[j] - center) * 0.86f + lift : outer[j];
+            Vector3 middle = center + lift;
+
+            if (bevel)
+                for (int j = 0; j < sides; j++)
+                {
+                    int k = (j + 1) % sides;
+                    face(outer[j], outer[k], inner[k], rim, rim, cut);
+                    face(outer[j], inner[k], inner[j], rim, cut, cut);
+                }
+            for (int j = 0; j < sides; j++)
+            {
+                int k = (j + 1) % sides;
+                face(middle, inner[j], inner[k], heart, bevel ? cut : rim, bevel ? cut : rim);
+            }
+        }
+
         static ForestMeshBuilder Stump(int lod)
         {
             var mb = new ForestMeshBuilder();
             int sides = lod == 0 ? 9 : 6;
-            mb.Tube(new List<Vector3> { new Vector3(0f, -0.2f, 0f), new Vector3(0f, 0.3f, 0f), new Vector3(0.02f, 0.62f, 0f) },
-                    t => Mathf.Lerp(0.48f, 0.38f, t), sides, (t, a) => Bark(t, a, 2100, 0.25f, 0.2f, 0.16f), false, true, 0.25f, 2101);
+            // 0.78 m to the top edge (+0.03 for the rounded rim): about the height the old broken top averaged, and the height of
+            // the stump's capsule collider, so a hand landing on it meets the surface
+            mb.Tube(new List<Vector3> { new Vector3(0f, -0.2f, 0f), new Vector3(0f, 0.36f, 0f), new Vector3(0.02f, 0.78f, 0f) },
+                    t => Mathf.Lerp(0.48f, 0.38f, t), sides, (t, a) => Bark(t, a, 2100, 0.25f, 0.2f, 0.16f), false, false);
+            StumpTop(mb, mb.pos.Count - (sides + 1), sides, lod == 0);       // the tube's last ring is its top edge
+            mb.surface = ForestSurface.Bark;
             if (lod == 0)
                 for (int r = 0; r < 4; r++)
                 {
@@ -827,6 +956,7 @@ namespace HavocForest.EditorTools
         static ForestMeshBuilder Sign()
         {
             var mb = new ForestMeshBuilder();
+            mb.surface = ForestSurface.Wood;
             Color wood = Lin(0.35f, 0.28f, 0.2f), dark = Lin(0.22f, 0.18f, 0.14f);
             mb.Tube(new List<Vector3> { new Vector3(0f, -0.3f, 0f), new Vector3(0.03f, 2.2f, 0f) }, t => 0.08f, 4, (t, a) => dark, false, true, 0.05f, 2200);
             // a slanted board: a flat box made of a short wide tube

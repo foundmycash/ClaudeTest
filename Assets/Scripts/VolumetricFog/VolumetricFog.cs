@@ -205,6 +205,62 @@ namespace VRFog
         readonly List<DepthOverride> depthOverrides = new List<DepthOverride>();
         int frameCounter;
 
+#if UNITY_EDITOR
+        // Editor only (a build has no Scene view). The Scene view camera cannot be given a depth texture the way game
+        // cameras are (EnableCameraDepth): it follows the pipeline asset, and Mobile_RPAsset has it off. Play mode switches
+        // to the Mobile quality level, so in the Scene view the fog could not see solid objects and was drawn over
+        // everything: far too dense, while it looked right before pressing Play. So while a fog that uses scene depth is
+        // enabled, the asset's depth texture is switched on for the length of each Scene view camera's render.
+        static int sceneViewDepthFogs;
+        static UniversalRenderPipelineAsset sceneViewDepthAsset;
+        bool sceneViewDepthRegistered;
+
+        void SetSceneViewDepth(bool wanted)
+        {
+            if (wanted == sceneViewDepthRegistered)
+                return;
+            sceneViewDepthRegistered = wanted;
+
+            if (wanted)
+            {
+                if (sceneViewDepthFogs++ == 0)
+                {
+                    RenderPipelineManager.beginCameraRendering += RaiseSceneViewDepth;
+                    RenderPipelineManager.endCameraRendering += LowerSceneViewDepth;
+                }
+            }
+            else if (--sceneViewDepthFogs == 0)
+            {
+                RenderPipelineManager.beginCameraRendering -= RaiseSceneViewDepth;
+                RenderPipelineManager.endCameraRendering -= LowerSceneViewDepth;
+                LowerSceneViewDepth(default, null);
+            }
+        }
+
+        // beginCameraRendering comes before the pipeline reads the asset's setting for this camera, endCameraRendering after.
+        static void RaiseSceneViewDepth(ScriptableRenderContext context, Camera camera)
+        {
+            if (camera.cameraType != CameraType.SceneView)
+                return;
+
+            UniversalRenderPipelineAsset asset = UniversalRenderPipeline.asset;
+            if (asset == null || asset.supportsCameraDepthTexture)
+                return;
+
+            asset.supportsCameraDepthTexture = true;
+            sceneViewDepthAsset = asset;
+        }
+
+        static void LowerSceneViewDepth(ScriptableRenderContext context, Camera camera)
+        {
+            if (sceneViewDepthAsset == null)
+                return;
+
+            sceneViewDepthAsset.supportsCameraDepthTexture = false;
+            sceneViewDepthAsset = null;
+        }
+#endif
+
         /// <summary>Loads one of the ready-made looks. Only the look changes, not the quality / performance settings.</summary>
         public void ApplyPreset(Preset preset)
         {
@@ -282,6 +338,9 @@ namespace VRFog
         {
             SceneManager.sceneLoaded -= OnSceneLoaded;
             RestoreCameraDepth();
+#if UNITY_EDITOR
+            SetSceneViewDepth(false);
+#endif
 
             if (meshRenderer != null && material != null && meshRenderer.sharedMaterial == material)
                 meshRenderer.sharedMaterial = null;
@@ -376,6 +435,10 @@ namespace VRFog
                 if (useSceneDepth) EnableCameraDepth();
                 else RestoreCameraDepth();
             }
+
+#if UNITY_EDITOR
+            SetSceneViewDepth(useSceneDepth);
+#endif
         }
 
         void UpdateNoiseTexture()

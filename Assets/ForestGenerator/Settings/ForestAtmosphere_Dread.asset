@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: ForestAtmosphere_Dread
   m_EditorClassIdentifier: Assembly-CSharp::HavocForest.ForestAtmosphereProfile
   fogColor: {r: 0.045, g: 0.055, b: 0.072, a: 1}
-  fogDensity: 0.046
+  fogDensity: 0.058
   skyAmbient: {r: 0.055, g: 0.065, b: 0.09, a: 1}
   horizonAmbient: {r: 0.032, g: 0.037, b: 0.05, a: 1}
   groundAmbient: {r: 0.01, g: 0.01, b: 0.012, a: 1}

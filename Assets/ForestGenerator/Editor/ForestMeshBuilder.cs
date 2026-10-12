@@ -7,20 +7,32 @@ namespace HavocForest.EditorTools
     /// A tiny mesh-building kit for the placeholder models: vertex-coloured, low-poly, built from tubes (trunks, branches,
     /// logs), jagged cone tiers (conifer foliage), lumpy blobs (leaf clumps, bushes, rocks) and thin strips (grass, fronds).
     /// Vertex colour alpha is the wind weight read by the Havoc/Forest Vegetation shader (0 = rigid).
+    /// Texture coordinates are (u, v, surface): u and v count repeats of the surface texture (see ForestSurfaceLayers.TileMetres),
+    /// the third value is the slice of the surface texture array. Set <see cref="surface"/> before adding a part.
     /// Faces are wound so that cross(b - a, c - a) points out of the surface (Unity's front face).
     /// </summary>
     public sealed class ForestMeshBuilder
     {
         public readonly List<Vector3> pos = new List<Vector3>();
         public readonly List<Color> col = new List<Color>();
+        public readonly List<Vector3> uv = new List<Vector3>();
         public readonly List<int> tri = new List<int>();
+
+        /// <summary>The surface of every vertex added from now on.</summary>
+        public ForestSurface surface = ForestSurface.Bark;
+
+        // vertex pairs that sit at the same place (the two sides of a tube's seam): their normals are averaged at the end
+        readonly List<int> seams = new List<int>();
 
         public int V(Vector3 p, Color c)
         {
             pos.Add(p);
             col.Add(c);
+            uv.Add(new Vector3(0f, 0f, (float)surface));
             return pos.Count - 1;
         }
+
+        float TileMetres { get { return ForestSurfaceLayers.TileMetres[(int)surface]; } }
 
         public void T(int a, int b, int c)
         {
@@ -29,13 +41,26 @@ namespace HavocForest.EditorTools
             tri.Add(c);
         }
 
-        /// <summary>A flat-shaded triangle (its own three vertices).</summary>
+        /// <summary>
+        /// A flat-shaded triangle (its own three vertices). Its texture is projected straight onto it along the axis it faces
+        /// most (like a box projection), in metres, so the pattern keeps one scale on every face of a rock or a crown.
+        /// </summary>
         public void FlatT(Vector3 a, Vector3 b, Vector3 c, Color ca, Color cb, Color cc)
         {
             int i = V(a, ca);
             V(b, cb);
             V(c, cc);
             T(i, i + 1, i + 2);
+
+            Vector3 n = Vector3.Cross(b - a, c - a);
+            float ax = Mathf.Abs(n.x), ay = Mathf.Abs(n.y), az = Mathf.Abs(n.z);
+            float inv = 1f / TileMetres;
+            for (int k = 0; k < 3; k++)
+            {
+                Vector3 p = pos[i + k];
+                Vector2 t = ay >= ax && ay >= az ? new Vector2(p.x, p.z) : ax >= az ? new Vector2(p.z, p.y) : new Vector2(p.x, p.y);
+                uv[i + k] = new Vector3(t.x * inv, t.y * inv, (float)surface);
+            }
         }
 
         /// <summary>Copies the triangles added since <paramref name="fromTri"/> with the other side facing out (for thin leaves and blades).</summary>
@@ -44,11 +69,18 @@ namespace HavocForest.EditorTools
             int end = tri.Count;
             for (int t = fromTri; t < end; t += 3)
             {
-                int a = V(pos[tri[t]], col[tri[t]]);
-                int b = V(pos[tri[t + 2]], col[tri[t + 2]]);
-                int c = V(pos[tri[t + 1]], col[tri[t + 1]]);
+                int a = Copy(tri[t]);
+                int b = Copy(tri[t + 2]);
+                int c = Copy(tri[t + 1]);
                 T(a, b, c);
             }
+        }
+
+        int Copy(int v)
+        {
+            int n = V(pos[v], col[v]);
+            uv[n] = uv[v];
+            return n;
         }
 
         public Mesh ToMesh(string name)
@@ -57,8 +89,22 @@ namespace HavocForest.EditorTools
             if (pos.Count > 65000) m.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
             m.SetVertices(pos);
             m.SetColors(col);
+            m.SetUVs(0, uv);
             m.SetTriangles(tri, 0);
             m.RecalculateNormals();
+            if (seams.Count > 0)
+            {
+                // a tube's seam has two vertices at one place (so its texture can wrap): give them the same smooth normal
+                var normals = new List<Vector3>();
+                m.GetNormals(normals);
+                for (int k = 0; k < seams.Count; k += 2)
+                {
+                    Vector3 avg = (normals[seams[k]] + normals[seams[k + 1]]).normalized;
+                    normals[seams[k]] = avg;
+                    normals[seams[k + 1]] = avg;
+                }
+                m.SetNormals(normals);
+            }
             m.RecalculateBounds();
             return m;
         }
@@ -88,26 +134,37 @@ namespace HavocForest.EditorTools
                 frames[i] = n;
             }
 
+            // each ring has sides + 1 vertices: the last repeats the first, so the texture can run all the way round
+            int stride = sides + 1;
+            float meanRadius = 0f;
+            for (int i = 0; i < rings; i++) meanRadius += radius((float)i / (rings - 1)) / rings;
+            int repeats = Mathf.Max(1, Mathf.RoundToInt(Mathf.PI * 2f * meanRadius / TileMetres));   // a whole number, or the seam would show
+
             int first = pos.Count;
+            float along = 0f;
             for (int i = 0; i < rings; i++)
             {
                 float t = (float)i / (rings - 1);
                 float r = radius(t);
+                if (i > 0) along += (path[i] - path[i - 1]).magnitude;
                 Vector3 b = Vector3.Cross(tangents[i], frames[i]);
-                for (int j = 0; j < sides; j++)
+                for (int j = 0; j <= sides; j++)
                 {
-                    float a = j * Mathf.PI * 2f / sides;
+                    float a = (j % sides) * Mathf.PI * 2f / sides;
                     Vector3 dir = frames[i] * Mathf.Cos(a) + b * Mathf.Sin(a);
-                    V(path[i] + dir * r, color(t, a));
+                    int vi = V(path[i] + dir * r, color(t, a));
+                    uv[vi] = new Vector3((float)j / sides * repeats, along / TileMetres, (float)surface);
                 }
+                seams.Add(first + i * stride);
+                seams.Add(first + i * stride + sides);
             }
             for (int i = 0; i + 1 < rings; i++)
             {
                 for (int j = 0; j < sides; j++)
                 {
-                    int j1 = (j + 1) % sides;
-                    int a = first + i * sides + j, bb = first + i * sides + j1;
-                    int c = first + (i + 1) * sides + j1, d = first + (i + 1) * sides + j;
+                    int j1 = j + 1;
+                    int a = first + i * stride + j, bb = first + i * stride + j1;
+                    int c = first + (i + 1) * stride + j1, d = first + (i + 1) * stride + j;
                     // outward: (a, d, c) and (a, c, b), see the class comment
                     if (Vector3.Dot(Vector3.Cross(pos[d] - pos[a], pos[c] - pos[a]), pos[a] - path[i]) >= 0f)
                     {
@@ -122,7 +179,7 @@ namespace HavocForest.EditorTools
                 }
             }
             if (capStart) Cap(first, sides, path[0], -tangents[0], color(0f, 0f), 0f, seed);
-            if (capEnd) Cap(first + (rings - 1) * sides, sides, path[rings - 1], tangents[rings - 1], color(1f, 0f), jagged, seed + 1);
+            if (capEnd) Cap(first + (rings - 1) * stride, sides, path[rings - 1], tangents[rings - 1], color(1f, 0f), jagged, seed + 1);
         }
 
         void Cap(int ring, int sides, Vector3 center, Vector3 outward, Color c, float jagged, int seed)
@@ -196,13 +253,16 @@ namespace HavocForest.EditorTools
         {
             int start = tri.Count;
             int first = pos.Count;
+            float along = 0f;
             for (int i = 0; i < spine.Count; i++)
             {
                 float t = (float)i / (spine.Count - 1);
                 float w = width(t) * 0.5f;
                 Color c = color(t);
-                V(spine[i] - side * w, c);
-                V(spine[i] + side * w, c);
+                if (i > 0) along += (spine[i] - spine[i - 1]).magnitude;
+                // the texture spans the strip's width once (a blade or frond with its rib down the middle) and repeats along it
+                uv[V(spine[i] - side * w, c)] = new Vector3(0f, along / TileMetres, (float)surface);
+                uv[V(spine[i] + side * w, c)] = new Vector3(1f, along / TileMetres, (float)surface);
             }
             for (int i = 0; i + 1 < spine.Count; i++)
             {

@@ -62,6 +62,10 @@ namespace HavocForest.EditorTools
             string msg;
             ForestTextureArrays.Build(d.layers, out msg);
             Debug.Log("Havoc Forest: " + msg);
+            if (!Application.isBatchMode)
+                EditorUtility.DisplayDialog("Havoc Forest",
+                    "Repainted the placeholder ground textures and the placeholder surface textures, and rebuilt the placeholder models.\n\n" + msg +
+                    "\n\nIf you changed any placeholder texture file by hand, that change is gone. Textures you assigned to the layers yourself are not touched.", "OK");
         }
 
         // ---------------------------------------------------------------- default assets
@@ -176,6 +180,9 @@ namespace HavocForest.EditorTools
                 d.library.categories = DefaultCategories(models);
                 AssetDatabase.CreateAsset(d.library, libPath);
             }
+
+            // bark, needles, leaves and stone for the models (made once and kept; stays off if the models predate them)
+            ForestSurfaceArrays.EnsureDefaults(d.vegetationMaterial, repaintPlaceholders);
 
             AssetDatabase.SaveAssets();
             return d;

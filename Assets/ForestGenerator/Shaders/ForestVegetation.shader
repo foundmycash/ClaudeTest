@@ -36,6 +36,11 @@ Shader "Havoc/Forest Vegetation"
         [Header(Emission)]
         [HDR] _EmissionColor ("Emission", Color) = (0, 0, 0, 0)
 
+        [Header(Surface Textures)]
+        [Toggle(_FOREST_SURFACES)] _UseSurfaces ("Surface Textures (the forest's generated models)", Float) = 0
+        _SurfaceArray ("Surface Texture Array", 2DArray) = "" {}
+        _SurfaceStrength ("Surface Texture Strength", Range(0, 1)) = 0.85
+
         [Header(Rendering)]
         [Toggle(_ALPHATEST_ON)] _AlphaClip ("Alpha Clip (leaf cards; costs more on Quest)", Float) = 0
         _Cutoff ("Alpha Cutoff", Range(0, 1)) = 0.5
@@ -57,6 +62,7 @@ Shader "Havoc/Forest Vegetation"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
         TEXTURE2D(_BaseMap);    SAMPLER(sampler_BaseMap);
+        TEXTURE2D_ARRAY(_SurfaceArray);    SAMPLER(sampler_SurfaceArray);
 
         CBUFFER_START(UnityPerMaterial)
             float4 _BaseMap_ST;
@@ -72,6 +78,8 @@ Shader "Havoc/Forest Vegetation"
             half _LampStrength;
             half _Smoothness;
             half4 _EmissionColor;
+            half _UseSurfaces;
+            half _SurfaceStrength;
             half _AlphaClip;
             half _Cutoff;
             half _Cull;
@@ -115,6 +123,7 @@ Shader "Havoc/Forest Vegetation"
             #pragma multi_compile_fragment _ _LIGHT_COOKIES
             #pragma multi_compile_fog
             #pragma shader_feature_local _ALPHATEST_ON
+            #pragma shader_feature_local _FOREST_SURFACES
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "ForestCommon.hlsl"
@@ -124,7 +133,7 @@ Shader "Havoc/Forest Vegetation"
                 float4 positionOS : POSITION;
                 float3 normalOS   : NORMAL;
                 half4  color      : COLOR;
-                float2 uv         : TEXCOORD0;
+                float3 uv         : TEXCOORD0;      // xy = texture coordinates, z = surface slice (the generated models)
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
@@ -139,6 +148,9 @@ Shader "Havoc/Forest Vegetation"
                 half   canopy     : TEXCOORD5;      // how much the canopy shades the sun here
             #if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
                 float4 shadowCoord : TEXCOORD6;
+            #endif
+            #if defined(_FOREST_SURFACES)
+                float3 surface    : TEXCOORD7;      // xy = surface texture coordinates (in repeats), z = slice
             #endif
                 UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
@@ -157,7 +169,10 @@ Shader "Havoc/Forest Vegetation"
                 o.positionWS = positionWS;
                 o.positionCS = TransformWorldToHClip(positionWS);
                 o.normalWS = n;
-                o.uv = TRANSFORM_TEX(input.uv, _BaseMap);
+                o.uv = TRANSFORM_TEX(input.uv.xy, _BaseMap);
+            #if defined(_FOREST_SURFACES)
+                o.surface = input.uv;
+            #endif
 
                 // ---- a different shade for every copy, from where it stands
                 float3 pivot = ObjectPivotWS();
@@ -200,6 +215,11 @@ Shader "Havoc/Forest Vegetation"
                 clip(tex.a * _BaseColor.a - _Cutoff);
             #endif
                 half3 albedo = tex.rgb * _BaseColor.rgb * input.color.rgb;
+            #if defined(_FOREST_SURFACES)
+                // the surface texture only adds pattern (stored with an average of 0.5, so x2): the colour stays the vertex colour
+                half3 detail = SAMPLE_TEXTURE2D_ARRAY(_SurfaceArray, sampler_SurfaceArray, input.surface.xy, round(input.surface.z)).rgb * 2.0h;
+                albedo *= lerp(half3(1.0h, 1.0h, 1.0h), detail, _SurfaceStrength);
+            #endif
                 half3 N = normalize(input.normalWS) * IS_FRONT_VFACE(face, 1.0h, -1.0h);
 
             #if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)

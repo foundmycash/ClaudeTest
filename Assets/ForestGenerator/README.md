@@ -203,6 +203,35 @@ or format is fine; each is resized into the arrays, imported as Texture2DArray w
 The Quest 2 "lite" mode is a global keyword (`_FOREST_LITE`, set by Forest World > Detail = Auto on Low-tier
 headsets): 2 ground surfaces per pixel instead of 3, no ground normal maps, no anti-tiling sample.
 
+### Surface textures on the models (bark, needles, leaves, stone...)
+The placeholder models get their colour from vertex colours. **Surface textures** add the pattern on top, still with one
+shared material and one draw per model.
+
+- **How it works.** Every part of a model says which of 8 surfaces it is (Bark, Birch Bark, Needles, Leaves, Blades
+  [grass and ferns], Stone, Iron, Wood) in its texture coordinates, `(u, v, surface)`; u and v count repeats. The shared
+  `ForestVegetation.mat` samples one Texture2DArray (`Settings/ForestSurfaceLayers_Detail.png`, ASTC 6x6 on Quest, 8 x
+  512 x 512 = about 1.2 MB) with a single extra texture read per pixel. Trunks and branches wrap their texture all the way
+  round (a whole number of repeats, so there is no seam); rocks and crowns are projected flat onto each face in metres,
+  so the pattern keeps one scale.
+- **Only the pattern is used.** Each texture is divided by its own average colour when the array is built, so it adds
+  grain, cracks and variation without changing the colours the models were designed with: a photo of grey bark on a brown
+  trunk does not turn it grey. Bark, leaves and so on stay the colours of the vertex colours (and of the autumn variation
+  between copies).
+- **Menu: Tools > Havoc Forest > Surface Textures.** *Add To The Models* does everything (paints the placeholder
+  textures into `Textures/Surfaces`, builds the array, switches it on, and rebuilds the placeholder model meshes and
+  prefabs so they carry texture coordinates: same shapes, the ground is not touched). *Turn Off* / *Turn On* go back to
+  plain vertex colours and forward again (the material's `_UseSurfaces`). *Repaint Placeholder Textures* repaints the
+  placeholder PNGs. *Rebuild Placeholder Models* only rebuilds the models.
+- **Your own textures.** `Settings/ForestSurfaceLayers.asset`: drop a seamlessly tiling texture into a slot (any size or
+  format, colour; no normal map is used) and press **Build Texture Array**. Strength (0..1) and the on/off switch apply
+  right away. How many metres one repeat covers is `ForestSurfaceLayers.TileMetres` (bark 1.0, birch 1.0, needles 0.7,
+  leaves 1.0, blades 0.3, stone 1.2, iron 0.8, wood 0.8); changing them needs *Rebuild Placeholder Models*.
+- **Safety.** Models without texture coordinates (made before this existed) would sample a single texel for every vertex,
+  so the textures are only switched on when the placeholder models have them (the menu checks). Your own prefabs are not
+  affected: they use their own materials, which keep the switch off.
+- **Cost.** One extra array sample per pixel on the vegetation, 3 floats of texture coordinates per vertex. Not
+  measured on a headset.
+
 ### Volumetric fog
 Forest Atmosphere > **Fog Mode = Volumetric** (the default) uses the project's own `Volumetric Fog` component
 (`VRFog`, ray-marched, the same fog as in the Loading scene) on a box over the whole forest: drifting, swirling mist,
