@@ -11,6 +11,7 @@ Shader "Havoc/Forest Lamp Glow"
         [HDR] _GlowColor ("Glow Colour", Color) = (0.6, 0.45, 0.3, 1)
         _Size ("Size (metres)", Float) = 2.4
         _NearFade ("Fade Out Closer Than (metres)", Float) = 2.5
+        _CameraOffset ("Pull Towards Camera (metres)", Float) = 0.7
         _Softness ("Falloff", Range(1, 6)) = 2.6
     }
 
@@ -45,6 +46,7 @@ Shader "Havoc/Forest Lamp Glow"
                 half4 _GlowColor;
                 float _Size;
                 float _NearFade;
+                float _CameraOffset;
                 half _Softness;
             CBUFFER_END
 
@@ -76,10 +78,14 @@ Shader "Havoc/Forest Lamp Glow"
                 float3 center = float3(UNITY_MATRIX_M._m03, UNITY_MATRIX_M._m13, UNITY_MATRIX_M._m23);
                 float3 right = float3(UNITY_MATRIX_V._m00, UNITY_MATRIX_V._m01, UNITY_MATRIX_V._m02);
                 float3 up = float3(UNITY_MATRIX_V._m10, UNITY_MATRIX_V._m11, UNITY_MATRIX_V._m12);
-                float3 positionWS = center + (right * input.positionOS.x + up * input.positionOS.y) * _Size;
+                // the quad sits a little in front of the lamp (towards the camera), so the halo is drawn over the shade and glass
+                // instead of being cut by them; trees and the ground nearer than that still hide it
+                float3 toCamera = GetCameraPositionWS() - center;
+                float dist = length(toCamera);
+                float3 pulled = center + toCamera * (min(_CameraOffset, dist * 0.5) / max(dist, 0.001));
+                float3 positionWS = pulled + (right * input.positionOS.x + up * input.positionOS.y) * _Size;
                 o.positionCS = TransformWorldToHClip(positionWS);
                 o.uv = input.uv;
-                float dist = distance(center, GetCameraPositionWS());
                 // the volumetric fog is drawn before the halos, so they fade into it here (Unity fog: the fog factor)
                 half nearFade = saturate((dist - _NearFade * 0.4) / max(0.01, _NearFade)) * exp(-_ForestFogExtinction * max(0.0, dist - _ForestFogClearDistance));
                 o.fade = half2(nearFade, ComputeFogFactor(o.positionCS.z));

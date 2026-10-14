@@ -16,12 +16,12 @@ namespace GorillaLocomotion
     ///
     /// <see cref="Player"/> adds this by itself with the defaults below. To tune it, add the component to the rig
     /// yourself (the Player then leaves it alone). To use another sound, assign <see cref="clip"/>, or replace
-    /// Resources/HandContact/HandImpact.wav.
+    /// Resources/HandContact/Hitsound.wav.
     /// </summary>
     [DisallowMultipleComponent]
     public class HandContactFeedback : MonoBehaviour
     {
-        const string DefaultClipPath = "HandContact/HandImpact";
+        const string DefaultClipPath = "HandContact/Hitsound";
 
         [Header("Impact strength")]
         [Tooltip("Hand speed into the surface (m/s) below which a touch gives no feedback at all.")]
@@ -44,7 +44,7 @@ namespace GorillaLocomotion
 
         [Header("Sound")]
         public bool sound = true;
-        [Tooltip("Impact sound. Empty = Resources/HandContact/HandImpact.")]
+        [Tooltip("Impact sound. Empty = Resources/HandContact/Hitsound.")]
         public AudioClip clip;
         [Tooltip("Each hit's pitch is random within 1 +/- this.")]
         [Range(0f, 0.3f)] public float pitchVariation = 0.06f;

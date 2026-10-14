@@ -126,6 +126,17 @@ Shader "VR Volumetric Fog/Box Volume"
                 float4 _BoxExtents;
             CBUFFER_END
 
+            // Optional "torch clears the fog" cone, set globally by the flashlight (ForestFlashlight). Outside the material's
+            // constant buffer on purpose: it is one shared value, not a per-material one. All zero (the default, and what a
+            // scene without a flashlight keeps) = no effect.
+            //   _FogClearPos.xyz    apex of the cone (the flashlight)         _FogClearDir.xyz   its axis (unit)
+            //   _FogClearParams.x   how much fog is removed in the cone (0..1; 0 = off)
+            //   _FogClearParams.y   cosine of the outer half angle             .z cosine of the inner half angle
+            //   _FogClearParams.w   length of the cone in meters (fades out over its last 30%)
+            float4 _FogClearPos;
+            float4 _FogClearDir;
+            float4 _FogClearParams;
+
             // How much fog (optical depth) one ray step should cover at most in thick fog. Lower = finer, costlier.
             static const float kOpticalDepthPerStep = 0.45;
 
@@ -210,6 +221,17 @@ Shader "VR Volumetric Fog/Box Volume"
                 // Fade in close to the eyes and out at the maximum distance.
                 density *= smoothstep(0.0, max(_NearFade, 1e-3), t);
                 density *= 1.0 - smoothstep(_MaxDistance * 0.7, _MaxDistance, t);
+
+                // The torch pushes the fog back inside its beam: thinner fog in the cone, soft at its sides and far end.
+                if (_FogClearParams.x > 0.0)
+                {
+                    float3 fromTorch = posWS - _FogClearPos.xyz;
+                    float torchDistance = max(length(fromTorch), 1e-3);
+                    float cosAngle = dot(fromTorch / torchDistance, _FogClearDir.xyz);
+                    float inBeam = smoothstep(_FogClearParams.y, max(_FogClearParams.z, _FogClearParams.y + 1e-3), cosAngle)
+                                 * (1.0 - smoothstep(_FogClearParams.w * 0.7, _FogClearParams.w, torchDistance));
+                    density *= 1.0 - _FogClearParams.x * inBeam;
+                }
 
                 if (density > 1e-4 && _NoiseStrength > 0.0)
                 {

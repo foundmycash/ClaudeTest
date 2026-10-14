@@ -10,11 +10,11 @@ namespace GorillaNet
     /// When a player leaves, Fusion removes their avatar for everybody because the prefab's NetworkObject has
     /// "Destroy When State Authority Leaves" on.
     ///
-    /// You never see your own avatar, so alone in a room there would be nothing to look at. While you are the only
-    /// player (the editor, development builds, and release builds too while <see cref="soloViewInReleaseBuilds"/> is on)
-    /// your avatar is drawn, so you can check it and watch it follow your head and hands: either on you, exactly where
-    /// the rig is (<see cref="SoloStyle.Self"/>), or as a mirror image in front of you (<see cref="SoloStyle.Mirror"/>).
-    /// It goes back to hidden / the mirror goes away as soon as somebody else joins.
+    /// Your own avatar is drawn on you, exactly where the rig is, so you can see your own body, hands and fingers.
+    /// With other players in the room that is <see cref="showOwnAvatarWithOthers"/>. While you are the only player (the
+    /// editor, development builds, and release builds too while <see cref="soloViewInReleaseBuilds"/> is on) the solo
+    /// view does the same, either on you (<see cref="SoloStyle.Self"/>) or as a mirror image in front of you
+    /// (<see cref="SoloStyle.Mirror"/>, which goes away as soon as somebody else joins).
     /// (Before you are in a room at all, the <see cref="OfflineRig"/> draws you instead.)
     /// </summary>
     public class AvatarSpawner : SimulationBehaviour, IPlayerJoined, IPlayerLeft
@@ -39,6 +39,10 @@ namespace GorillaNet
 
         [Tooltip("Self: your own avatar, on you. Mirror: a mirror image of it in front of you.")]
         public SoloStyle soloStyle = SoloStyle.Self;
+
+        [Header("With other players")]
+        [Tooltip("Keep drawing your own avatar, on you, while other players are in the room (it used to disappear as soon as somebody joined, so you could not see your own hands and body). Does not depend on the solo view settings above.")]
+        public bool showOwnAvatarWithOthers = true;
 
         [Tooltip("Mirror style only: how far in front of you the mirror stands (meters). Your reflection appears the same distance behind it, so twice this far from you.")]
         public float mirrorDistance = 2f;
@@ -94,12 +98,14 @@ namespace GorillaNet
             if (Runner == null || !Runner.IsRunning || LocalAvatar == null)
                 return;
 
-            bool alone = SoloViewEnabled && Runner.ActivePlayers.Count() == 1;
+            bool onlyPlayer = Runner.ActivePlayers.Count() == 1;
+            bool alone = SoloViewEnabled && onlyPlayer;
             if (!alone)
             {
                 aloneSince = -1f;
                 DespawnMirror();
-                SetOwnAvatarVisible(false);
+                // Other players are here: your own body is drawn on you, unless that is switched off. (Alone with the solo view off: hidden.)
+                SetOwnAvatarVisible(!onlyPlayer && showOwnAvatarWithOthers);
                 return;
             }
 

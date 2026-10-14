@@ -79,8 +79,12 @@ namespace GorillaNet
         [Tooltip("The arms stretch up to this many times their length to keep hands where the player's hands are. 1 = never stretch.")]
         [Range(1f, 2f)] public float maxArmStretch = 1.5f;
 
-        [Tooltip("Turns the hands relative to the controllers (euler degrees). Fingers follow the controller's forward direction and the thumb its up direction; adjust this if the hands look twisted in the headset.")]
+        [Tooltip("Turns the hands relative to the controllers (euler degrees). Fingers follow the controller's forward direction and the thumb its up direction; adjust this if the hands look twisted in the headset.\n" +
+                 "It is the offset of ONE hand (see Offset Is For Left Hand); the other hand gets its mirror image (pitch kept, yaw and roll reversed), because the two controllers are mirror images of each other. The same numbers on both hands would twist one of them.")]
         public Vector3 handRotationOffset;
+
+        [Tooltip("Which hand the Hand Rotation Offset was tuned on. Off = the right hand (the left one is mirrored), on = the left hand (the right one is mirrored). If one hand looks right and the other twisted, flip this.")]
+        public bool offsetIsForLeftHand;
 
         [Header("Fingers")]
         [Tooltip("Turn the finger bones with the controller input: trigger = pointer finger, grip = ring finger, A / X = thumb. Plain bone rotations, no animation.")]
@@ -237,9 +241,11 @@ namespace GorillaNet
             transform.position = headBonePosition - bodyRotation * Vector3.Scale(headRestLocal, transform.lossyScale);
             headBone.rotation = headBoneRotation;
 
-            Quaternion handOffset = Quaternion.Euler(handRotationOffset);
-            SolveArm(leftArm, leftHandTarget, -1f, bodyRotation, handOffset);
-            SolveArm(rightArm, rightHandTarget, 1f, bodyRotation, handOffset);
+            // One offset for the hand it was tuned on, its mirror image for the other (the controllers are mirrored too).
+            Quaternion tunedOffset = Quaternion.Euler(handRotationOffset);
+            Quaternion mirroredOffset = Quaternion.Euler(handRotationOffset.x, -handRotationOffset.y, -handRotationOffset.z);
+            SolveArm(leftArm, leftHandTarget, -1f, bodyRotation, offsetIsForLeftHand ? tunedOffset : mirroredOffset);
+            SolveArm(rightArm, rightHandTarget, 1f, bodyRotation, offsetIsForLeftHand ? mirroredOffset : tunedOffset);
 
             if (animateFingers)
             {
@@ -323,6 +329,12 @@ namespace GorillaNet
         void Initialize()
         {
             initialized = true;
+
+            // The player's rig is built a bit smaller than 1 (Player.bodyScale), so the body shrinks with it: same hands, same head, a
+            // body that fits them. Done before the model is measured below. Everybody's game does it, so the sizes agree.
+            float size = GorillaLocomotion.Player.BodyScale;
+            if (!Mathf.Approximately(size, 1f))
+                transform.localScale *= size;
 
             headRestRelative = Quaternion.Inverse(transform.rotation) * headBone.rotation;
             headRestLocal = transform.InverseTransformPoint(headBone.position);

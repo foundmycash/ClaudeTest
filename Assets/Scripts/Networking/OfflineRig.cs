@@ -15,9 +15,9 @@ namespace GorillaNet
     /// here too. Created by <see cref="NetworkLauncher"/> (its "Show Offline Rig" option); nothing to set up in the scene.
     ///
     /// Once you are in a room the networked avatars take over:
-    /// * somebody else is in the room: you don't see your own body (they see it), so this one goes away;
-    /// * you are alone: this one stays until the solo view of the <see cref="AvatarSpawner"/> has drawn your networked avatar
-    ///   (so there is no gap), and goes away for good if the solo view is switched off.
+    /// * this one stays until the <see cref="AvatarSpawner"/> has drawn your own networked avatar (so there is no gap), and goes
+    ///   away for good once it has; it also goes away if that view is switched off (the solo view when you are alone, "Show Own
+    ///   Avatar With Others" when somebody else is in the room).
     /// </summary>
     public class OfflineRig : MonoBehaviour
     {
@@ -169,11 +169,10 @@ namespace GorillaNet
                 cachedRunner = runner;
                 cachedSpawner = runner != null ? runner.GetComponent<AvatarSpawner>() : null;
             }
-            if (cachedSpawner == null || !cachedSpawner.SoloViewEnabled)
+            if (cachedSpawner == null)
                 return false;
-            if (runner.ActivePlayers.Count() > 1)
-                return false;
-            return !cachedSpawner.OwnAvatarDrawn;
+            bool wanted = runner.ActivePlayers.Count() > 1 ? cachedSpawner.showOwnAvatarWithOthers : cachedSpawner.SoloViewEnabled;
+            return wanted && !cachedSpawner.OwnAvatarDrawn;
         }
 
         // Turning the renderers off (not the object) is what puts the body rig to sleep, and it fits the torso from scratch when they come back on.

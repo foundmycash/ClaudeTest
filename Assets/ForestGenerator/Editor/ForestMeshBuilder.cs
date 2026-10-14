@@ -113,10 +113,10 @@ namespace HavocForest.EditorTools
 
         /// <summary>
         /// A tube along a path (trunk, branch, log, root). radius(t) and colour(t, angle) are given per ring (t = 0..1 along the
-        /// path). Smooth sides; the far end can be closed with a jagged broken cap.
+        /// path). Smooth sides; the far end can be closed with a jagged broken cap. inward = the faces point into the tube.
         /// </summary>
         public void Tube(IList<Vector3> path, System.Func<float, float> radius, int sides, System.Func<float, float, Color> color,
-                         bool capStart, bool capEnd, float jagged = 0f, int seed = 0)
+                         bool capStart, bool capEnd, float jagged = 0f, int seed = 0, bool inward = false)
         {
             int rings = path.Count;
             if (rings < 2) return;
@@ -166,7 +166,8 @@ namespace HavocForest.EditorTools
                     int a = first + i * stride + j, bb = first + i * stride + j1;
                     int c = first + (i + 1) * stride + j1, d = first + (i + 1) * stride + j;
                     // outward: (a, d, c) and (a, c, b), see the class comment
-                    if (Vector3.Dot(Vector3.Cross(pos[d] - pos[a], pos[c] - pos[a]), pos[a] - path[i]) >= 0f)
+                    // inward: the same tube with the faces turned round, the inside skin of a hollow shape (a lampshade)
+                    if ((Vector3.Dot(Vector3.Cross(pos[d] - pos[a], pos[c] - pos[a]), pos[a] - path[i]) >= 0f) != inward)
                     {
                         T(a, d, c);
                         T(a, c, bb);

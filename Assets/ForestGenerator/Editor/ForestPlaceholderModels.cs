@@ -237,9 +237,12 @@ namespace HavocForest.EditorTools
             head = new Vector3(lean, 6.36f, reach);
             var arm = new List<Vector3> { top + Vector3.down * 0.4f, top + new Vector3(0f, 0.05f, 0.35f), new Vector3(lean, 6.44f, reach * 0.6f), head + Vector3.up * 0.03f };
             mb.Tube(arm, t => Mathf.Lerp(0.05f, 0.035f, t), 6, iron, false, false);
-            // the shade: a flared cone over the glass
-            mb.Tube(new List<Vector3> { head + Vector3.up * 0.04f, head + Vector3.down * 0.2f }, t => Mathf.Lerp(0.07f, 0.34f, t), 10,
-                    (t, a) => Lin(0.13f, 0.13f, 0.12f), true, false);
+            // the shade: a flared cone over the glass, two-sided (an outer skin, and a slightly smaller inner skin facing down
+            // into the lamp, so it is solid when seen from below too)
+            var shadePath = new List<Vector3> { head + Vector3.up * 0.04f, head + Vector3.down * 0.2f };
+            System.Func<float, float, Color> shadeColor = (t, a) => Lin(0.13f, 0.13f, 0.12f);
+            mb.Tube(shadePath, t => Mathf.Lerp(0.07f, 0.34f, t), 10, shadeColor, true, false);
+            mb.Tube(shadePath, t => Mathf.Lerp(0.058f, 0.328f, t), 10, shadeColor, false, false, 0f, 0, true);
             return mb;
         }
 

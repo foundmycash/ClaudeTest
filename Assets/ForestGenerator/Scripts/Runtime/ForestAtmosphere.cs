@@ -10,7 +10,9 @@ namespace HavocForest
         /// <summary>The project's ray-marched Volumetric Fog on a box over the whole forest.</summary>
         Volumetric,
         /// <summary>Unity's built-in exponential squared distance fog.</summary>
-        UnityFog
+        UnityFog,
+        /// <summary>No fog at all (debugging): the forest is drawn clear out to the camera's far plane.</summary>
+        None
     }
 
     /// <summary>
@@ -49,7 +51,7 @@ namespace HavocForest
         [Min(0.1f)] public float response = 6f;
 
         [Header("Fog")]
-        [Tooltip("Volumetric: the project's ray-marched Volumetric Fog on a box over the whole forest (drifting mist, light glowing in the fog). It needs the camera depth texture and costs GPU time on every pixel of both eyes: see the README, 'Volumetric fog'. If its box is missing or switched off, Unity fog is used.\nUnity Fog: the built-in distance fog, almost free.")]
+        [Tooltip("Volumetric: the project's ray-marched Volumetric Fog on a box over the whole forest (drifting mist, light glowing in the fog). It needs the camera depth texture and costs GPU time on every pixel of both eyes: see the README, 'Volumetric fog'. If its box is missing or switched off, Unity fog is used.\nUnity Fog: the built-in distance fog, almost free.\nNone: no fog at all, for debugging. The far plane is pushed out to Far Plane Without Fog so the whole forest shows.")]
         public ForestFogMode fogMode = ForestFogMode.Volumetric;
 
         [Tooltip("The forest's Volumetric Fog box, created as a child of this object when empty. Its size follows the forest, and its Density, Fog Color and Max Distance come from the profiles; tune everything else on it.")]
@@ -57,6 +59,9 @@ namespace HavocForest
 
         [Tooltip("How far around the player the volumetric fog stays thin, as a share of the fog distance. 0 = like real fog (already hazy a few metres away); 0.3 = close to Unity's fog (clear close up, thickening quickly further out). At night 0.2 keeps the flashlight from lighting up a wall of fog right in front of the eyes while its beam still shows further out; 0 makes that glare much stronger.")]
         [Range(0f, 0.6f)] public float clearZone = 0.2f;
+
+        [Tooltip("Camera far plane (metres) while Fog Mode is None. Only used for debugging with the fog off.")]
+        [Min(10f)] public float farPlaneWithoutFog = 500f;
 
         [Tooltip("Draw the volumetric fog in the Scene view too. Turn off to see the forest from above while editing.")]
         public bool fogInSceneView = true;
@@ -265,6 +270,13 @@ namespace HavocForest
             {
                 if (RenderSettings.fog) RenderSettings.fog = false;
                 opaqueDistance = ApplyVolumetric(s);
+            }
+            else if (fogMode == ForestFogMode.None)
+            {
+                if (RenderSettings.fog) RenderSettings.fog = false;
+                VolumetricDistance = 0f;
+                Shader.SetGlobalFloat(ExtinctionId, 0f);
+                opaqueDistance = farPlaneWithoutFog / 1.03f;
             }
             else
             {

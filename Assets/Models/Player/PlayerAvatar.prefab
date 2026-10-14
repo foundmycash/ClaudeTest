@@ -332,6 +332,14 @@ MonoBehaviour:
   elbowDirection: {x: 0.45, y: -1, z: -0.6}
   maxArmStretch: 1.5
   handRotationOffset: {x: 0, y: 0, z: 0}
+  animateFingers: 1
+  pointerCurl: {x: 55, y: 80, z: 55}
+  ringCurl: {x: 60, y: 85, z: 60}
+  thumbCurl: {x: 15, y: 35, z: 35}
+  thumbSweep: {x: 28, y: 48, z: 48}
+  fingerTravelTime: 0.07
+  halfRateDistance: 20
+  quarterRateDistance: 40
 --- !u!1 &2191504245482194953
 GameObject:
   m_ObjectHideFlags: 0
@@ -1081,7 +1089,7 @@ SkinnedMeshRenderer:
   m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
-  m_UpdateWhenOffscreen: 0
+  m_UpdateWhenOffscreen: 1
   m_SkinnedMotionVectors: 0
   m_Mesh: {fileID: 4300000, guid: dbddb0b9c490ecc479eefd532046f93c, type: 2}
   m_Bones:

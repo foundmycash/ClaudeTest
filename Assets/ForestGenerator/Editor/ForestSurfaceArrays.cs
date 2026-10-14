@@ -63,7 +63,24 @@ namespace HavocForest.EditorTools
                    " If a forest in a scene looks wrong, press Generate on its Forest object and save the scene.");
         }
 
-        const string LookHere = "\n\nWhere to see it: open the Forest scene (Assets/Scenes/Forest.unity) and look at a tree trunk, a rock or a stump. " +
+        [MenuItem("Tools/Havoc Forest/Surface Textures/Rebuild Streetlight Models Only", priority = 52)]
+        static void RebuildStreetlightsMenu()
+        {
+            Material veg = AssetDatabase.LoadAssetAtPath<Material>(VegetationPath);
+            Material glass = AssetDatabase.LoadAssetAtPath<Material>(GlassPath);
+            Material glow = AssetDatabase.LoadAssetAtPath<Material>(GlowPath);
+            if (veg == null || glass == null || glow == null)
+            {
+                Report("The forest materials are missing. Use Tools > Havoc Forest > Surface Textures > Rebuild Placeholder Models instead.");
+                return;
+            }
+            int count = ForestPlaceholderModels.CreateStreetLamps(veg, glass, glow, true).Count;
+            ForestPrefabInfo.ClearCache();
+            AssetDatabase.SaveAssets();
+            Report("Rebuilt " + count + " streetlight models (meshes and prefabs, in place); the trees and rocks were not touched.");
+        }
+
+        const string LookHere ="\n\nWhere to see it: open the Forest scene (Assets/Scenes/Forest.unity) and look at a tree trunk, a rock or a stump. " +
                                 "The models are only drawn in scenes that have a forest, so a scene without one will not change.";
 
         /// <summary>Tells the user what a menu item did: in the Console, and in a dialog so it is clear something happened.</summary>

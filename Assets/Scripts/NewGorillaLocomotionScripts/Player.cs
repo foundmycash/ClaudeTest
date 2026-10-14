@@ -54,6 +54,19 @@
         [Tooltip("Adds a HandContactFeedback (haptics + impact sound) to this object on startup if it doesn't have one. Turn off if you place and tune the component yourself and want none by default.")]
         public bool autoAddContactFeedback = true;
 
+        [Header("Size")]
+        [Tooltip("How big you are compared to the world. 1 = the rig as it is built; 0.9 = 10% smaller (the world, your reach and your head height all feel 10% bigger). Applied once at startup to the XR rig this object sits in, together with Max Arm Length and Un Stick Distance, and the gorilla body models follow it (see BodyScale). Not applied to a kinematic rig (the loading scene).")]
+        [Range(0.5f, 1.5f)] public float bodyScale = 0.9f;
+
+        /// <summary>The size factor applied to the player's rig (1 when none is applied). The gorilla avatar models use it so bodies match the rig.</summary>
+        public static float BodyScale { get; private set; } = 1f;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics()
+        {
+            BodyScale = 1f;
+        }
+
         [Header("Locomotion feel")]
         [Tooltip("Smooths the speed you let go with. It follows your hands quickly (the original averaged 8 frames, so letting go felt late), faint pushes fade in instead of being cut off, the top speed is approached gradually instead of hitting a wall, speed you are already carrying helps your next push, and the launch eases up to speed over a few frames. Off = the original behaviour (8 frame average, hard thresholds, instant launch).")]
         public bool smoothLaunch = true;
@@ -119,8 +132,35 @@
                 {
                     gameObject.AddComponent<HandContactFeedback>();
                 }
+                ApplyBodyScale();
             }
             InitializeValues();
+        }
+
+        private void OnDestroy()
+        {
+            if (_instance == this)
+            {
+                BodyScale = 1f;
+            }
+        }
+
+        // Scales the XR rig this object is part of (head, hands, followers, colliders all hang under it) once, before the first
+        // positions are remembered. The arm limits are lengths in the world, so they shrink with it.
+        private void ApplyBodyScale()
+        {
+            Rigidbody body = GetComponent<Rigidbody>();
+            Transform rig = transform.parent;
+            if (rig == null || (body != null && body.isKinematic) || Mathf.Approximately(bodyScale, 1f))
+            {
+                BodyScale = 1f;
+                return;
+            }
+
+            rig.localScale *= bodyScale;
+            maxArmLength *= bodyScale;
+            unStickDistance *= bodyScale;
+            BodyScale = bodyScale;
         }
 
         public void InitializeValues()

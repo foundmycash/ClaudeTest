@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Fusion;
 using UnityEngine;
 
@@ -23,6 +24,23 @@ namespace GorillaNet
         /// replace it to drive avatars from somewhere else (bots, tests).
         /// </summary>
         public static Func<NetworkRunner, IAvatarPoseSource> PoseSourceFactory = runner => new GorillaRigPoseSource();
+
+        /// <summary>Every avatar that is spawned on this peer right now: your own and everybody else's. For systems that need to know who is in the room (the monster hunts them).</summary>
+        public static readonly List<NetworkAvatar> Active = new List<NetworkAvatar>();
+
+        /// <summary>Raised on this peer when an avatar has spawned (after its owner is known).</summary>
+        public static event Action<NetworkAvatar> AvatarSpawned;
+
+        /// <summary>Raised on this peer when an avatar is about to go away.</summary>
+        public static event Action<NetworkAvatar> AvatarDespawned;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics()
+        {
+            Active.Clear();
+            AvatarSpawned = null;
+            AvatarDespawned = null;
+        }
 
         [Header("Parts (each one has a NetworkTransform)")]
         public Transform head;
@@ -121,6 +139,10 @@ namespace GorillaNet
                     poseSource = PoseSourceFactory(Runner);
                 FollowPoseSource();
             }
+
+            if (!Active.Contains(this))
+                Active.Add(this);
+            AvatarSpawned?.Invoke(this);
         }
 
         void ApplyVisibility()
@@ -137,6 +159,8 @@ namespace GorillaNet
 
         public override void Despawned(NetworkRunner runner, bool hasState)
         {
+            AvatarDespawned?.Invoke(this);
+            Active.Remove(this);
             poseSource = null;
         }
 
